@@ -38,6 +38,13 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GITHUB_PAGES: 'true'
       
+      - name: Verify build output
+        run: |
+          echo "Build output contents:"
+          ls -la client/dist/
+          echo "Checking for index.html:"
+          test -f client/dist/index.html && echo "✓ index.html exists" || echo "✗ index.html missing"
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
