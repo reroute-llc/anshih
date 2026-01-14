@@ -1,6 +1,6 @@
 # Anshih - 80's Media Hub
 
-A vibrant 80's retro-styled media hub for Soundbites, GIFs, and Images. Built with React and Node.js.
+A vibrant 80's retro-styled media hub for Soundbites, GIFs, and Images. Built with React and Supabase.
 
 ## Features
 
@@ -10,7 +10,7 @@ A vibrant 80's retro-styled media hub for Soundbites, GIFs, and Images. Built wi
 - 🔊 **Soundbites** - Upload and play audio files
 - 🎬 **GIFs** - Upload and share GIF files
 - 🖼️ **Images** - Upload and share image files
-- ⚡ **Real-time Updates** - Changes are instantly reflected via WebSocket
+- ⚡ **Real-time Updates** - Changes are instantly reflected via Supabase Realtime
 - 📤 **Easy Upload** - Simple drag-and-drop file upload interface
 - 🖼️ **Fullscreen Viewer** - Click media to view in fullscreen with navigation
 
@@ -18,56 +18,59 @@ A vibrant 80's retro-styled media hub for Soundbites, GIFs, and Images. Built wi
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js 20+ 
 - npm or yarn
+- Supabase account (free tier available)
 
 ### Installation
 
-1. Install all dependencies:
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/anshih.git
+cd anshih
+```
+
+2. Install dependencies:
 ```bash
 npm run install:all
 ```
 
-2. Start the development servers:
+3. Set up environment variables:
+```bash
+cd client
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+```
+
+4. Set up Supabase:
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Run the migration: `supabase/migrations/001_initial_schema.sql`
+   - Create a storage bucket named `media` (make it public)
+   - See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed instructions
+
+5. Start the development server:
 ```bash
 npm run dev
 ```
 
-This will start:
-- Frontend server on `http://localhost:3000`
-- Backend API server on `http://localhost:3001`
+This will start the frontend at `http://localhost:3000`
 
 ### Project Structure
 
 ```
 anshih/
-├── client/          # React frontend
+├── client/              # React frontend
 │   ├── src/
-│   │   ├── components/
+│   │   ├── components/  # React components
+│   │   ├── lib/         # Supabase client
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   └── package.json
-├── server/          # Node.js backend
-│   ├── server.js
-│   ├── uploads/     # Uploaded media files
-│   └── package.json
+├── supabase/            # Supabase configuration
+│   ├── functions/       # Edge Functions
+│   └── migrations/     # Database migrations
 └── package.json
 ```
-
-## API Endpoints
-
-### GET `/api/media`
-Get all media items (soundbites, gifs, images)
-
-### POST `/api/upload`
-Upload a new media file
-- Body: `multipart/form-data`
-- Fields:
-  - `file`: The file to upload
-  - `type`: Media type (`soundbites`, `gifs`, or `images`)
-
-### DELETE `/api/media/:type/:id`
-Delete a media item
 
 ## Usage
 
@@ -101,9 +104,6 @@ The app can be installed as a Progressive Web App:
 ```bash
 # Build the React client
 npm run build
-
-# Start the production server
-npm start
 ```
 
 The built files will be in `client/dist/`
@@ -111,33 +111,32 @@ The built files will be in `client/dist/`
 **Note**: For PWA to work in production, make sure:
 - The site is served over HTTPS (required for service workers)
 - Icons are placed in the `public/` directory before building
-- Set environment variables (see `DEPLOYMENT.md` for details)
+- Set environment variables (see `.env.example` for details)
 
 ## Deployment
 
-### AWS Amplify Deployment (Recommended)
+### Supabase + GitHub Pages (Recommended)
 
-See [AMPLIFY_DEPLOYMENT.md](./AMPLIFY_DEPLOYMENT.md) for AWS Amplify deployment guide.
+See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for setup guide.
 
 **Quick setup:**
-1. Create AWS account and connect GitHub to Amplify
-2. Create new Amplify app from GitHub repo
-3. Deploy backend to AWS (Elastic Beanstalk, Lambda, or EC2)
-4. Set environment variables in both Amplify and backend
-5. Deploy automatically on push to `main`
+1. Create Supabase project and run database migration
+2. Create storage bucket and set policies
+3. Deploy Edge Function for URL uploads
+4. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in GitHub Secrets
+5. Push to GitHub - frontend auto-deploys to GitHub Pages
+6. **No backend server needed!** Everything runs on Supabase
 
 ### Other Deployment Options
 
-- **Render**: See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for Render deployment
-- **Railway**: See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for Railway deployment
-- **GitHub Pages**: See [GITHUB_DEPLOYMENT.md](./GITHUB_DEPLOYMENT.md) (frontend only)
-- **Manual**: See [DEPLOYMENT.md](./DEPLOYMENT.md) for manual deployment
+- **GitHub Pages Setup**: See [GITHUB_PAGES_SETUP.md](./GITHUB_PAGES_SETUP.md)
 
 ## Technologies
 
-- **Frontend**: React, Vite, Socket.io-client
-- **Backend**: Node.js, Express, Socket.io, Multer
+- **Frontend**: React, Vite
+- **Backend**: Supabase (PostgreSQL, Storage, Realtime)
 - **Styling**: CSS with 80's retro theme
+- **Deployment**: GitHub Pages
 
 ## License
 

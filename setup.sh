@@ -13,19 +13,16 @@ cd client
 npm install
 cd ..
 
-# Install server dependencies
-echo "📦 Installing server dependencies..."
-cd server
-npm install
-cd ..
-
 echo ""
 echo "✅ Setup complete!"
 echo ""
-echo "To start the development servers, run:"
+echo "⚠️  Don't forget to:"
+echo "  1. Create a .env.local file in the client/ directory"
+echo "  2. Add your Supabase URL and anon key"
+echo ""
+echo "To start the development server, run:"
 echo "  npm run dev"
 echo ""
-echo "This will start:"
+echo "This will start the frontend at:"
 echo "  - Frontend: http://localhost:3000"
-echo "  - Backend:  http://localhost:3001"
 echo ""

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { v4 as uuidv4 } from 'uuid'
 import './UploadPanel.css'
 
 function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
@@ -34,6 +36,17 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
     }
   }
 
+  const detectMediaType = (mimetype) => {
+    if (mimetype.startsWith('audio/')) {
+      return 'soundbites'
+    } else if (mimetype === 'image/gif') {
+      return 'gifs'
+    } else if (mimetype.startsWith('image/')) {
+      return 'images'
+    }
+    return null
+  }
+
   const handleUpload = async () => {
     if (uploadMethod === 'file' && !selectedFile) return
     if (uploadMethod === 'url' && !urlInput.trim()) return
@@ -43,77 +56,86 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
 
     try {
       if (uploadMethod === 'file') {
-        const formData = new FormData()
-        formData.append('file', selectedFile)
-        if (customName.trim()) {
-          formData.append('name', customName.trim())
+        const file = selectedFile
+        const type = detectMediaType(file.type)
+        
+        if (!type) {
+          alert('Unsupported file type. Only audio, GIF, or image files are allowed')
+          setUploading(false)
+          return
         }
 
-        const xhr = new XMLHttpRequest()
+        // Generate unique file path
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${uuidv4()}.${fileExt}`
+        const filePath = `${type}/${fileName}`
 
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = (e.loaded / e.total) * 100
-            setUploadProgress(percentComplete)
-          }
-        })
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          })
 
-        xhr.addEventListener('load', () => {
-          if (xhr.status === 200) {
-            setUploading(false)
-            setUploadProgress(100)
-            setTimeout(() => {
-              onUploadSuccess()
-              setSelectedFile(null)
-              setCustomName('')
-              setUploadProgress(0)
-            }, 500)
-          } else {
-            const response = JSON.parse(xhr.responseText || '{}')
-            alert(response.error || 'Upload failed!')
-            setUploading(false)
-          }
-        })
+        if (uploadError) throw uploadError
 
-        xhr.addEventListener('error', () => {
-          alert('Upload error!')
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('media')
+          .getPublicUrl(filePath)
+
+        // Insert into database
+        const itemName = customName.trim() || file.name.substring(0, file.name.lastIndexOf('.')) || file.name
+        const { error: dbError } = await supabase
+          .from('media_items')
+          .insert({
+            name: itemName,
+            type: type,
+            storage_path: filePath,
+            storage_bucket: 'media',
+            size: file.size
+          })
+
+        if (dbError) throw dbError
+
+        setUploadProgress(100)
+        setTimeout(() => {
+          onUploadSuccess()
+          setSelectedFile(null)
+          setCustomName('')
+          setUploadProgress(0)
           setUploading(false)
-        })
-
-        xhr.open('POST', '/api/upload')
-        xhr.send(formData)
+        }, 500)
       } else {
-        // URL upload
-        const response = await fetch('/api/upload-url', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        // URL upload - use Edge Function
+        const { data, error } = await supabase.functions.invoke('upload-url', {
+          body: {
             url: urlInput.trim(),
             name: customName.trim() || undefined
-          })
+          }
         })
 
-        const data = await response.json()
+        if (error) throw error
 
-        if (response.ok) {
-          setUploadProgress(100)
-          setTimeout(() => {
-            onUploadSuccess()
-            setUrlInput('')
-            setCustomName('')
-            setUploadProgress(0)
-            setUploading(false)
-          }, 500)
-        } else {
-          alert(data.error || 'Upload failed!')
+        if (data.error) {
+          alert(data.error)
           setUploading(false)
+          return
         }
+
+        setUploadProgress(100)
+        setTimeout(() => {
+          onUploadSuccess()
+          setUrlInput('')
+          setCustomName('')
+          setUploadProgress(0)
+          setUploading(false)
+        }, 500)
       }
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Upload failed!')
+      alert(error.message || 'Upload failed!')
       setUploading(false)
     }
   }

@@ -13,9 +13,10 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hackernoon/pixel-icon-library": "^1.0.6",
+    "@supabase/supabase-js": "^2.90.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "socket.io-client": "^4.7.2"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

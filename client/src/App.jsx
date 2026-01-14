@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { io } from 'socket.io-client'
+import { supabase } from './lib/supabase'
 import Header from './components/Header'
 import MediaHub from './components/MediaHub'
 import UploadPanel from './components/UploadPanel'
 import MediaViewer from './components/MediaViewer'
 import './App.css'
-
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001')
 
 function App() {
   const [media, setMedia] = useState({
@@ -80,20 +78,14 @@ function App() {
 
   const handleRename = async (type, id, newName) => {
     try {
-      const response = await fetch(`/api/media/${type}/${id}/rename`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newName })
-      })
+      const { error } = await supabase
+        .from('media_items')
+        .update({ name: newName })
+        .eq('id', id)
+        .eq('type', type)
 
-      if (response.ok) {
-        // Media will be updated via socket
-      } else {
-        const data = await response.json()
-        throw new Error(data.error || 'Rename failed')
-      }
+      if (error) throw error
+      // Media will be updated via Realtime subscription
     } catch (error) {
       console.error('Rename error:', error)
       throw error
@@ -102,19 +94,29 @@ function App() {
 
   const handleReorder = async (type, sourceIndex, targetIndex) => {
     try {
-      const response = await fetch(`/api/media/${type}/reorder`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sourceIndex, targetIndex })
-      })
+      const items = media[type]
+      const sourceItem = items[sourceIndex]
+      const targetItem = items[targetIndex]
+      
+      // Swap display_order values
+      const sourceOrder = sourceItem.display_order ?? sourceIndex
+      const targetOrder = targetItem.display_order ?? targetIndex
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Reorder failed')
-      }
-      // Media will be updated via socket
+      // Update both items
+      const { error: error1 } = await supabase
+        .from('media_items')
+        .update({ display_order: targetOrder })
+        .eq('id', sourceItem.id)
+
+      if (error1) throw error1
+
+      const { error: error2 } = await supabase
+        .from('media_items')
+        .update({ display_order: sourceOrder })
+        .eq('id', targetItem.id)
+
+      if (error2) throw error2
+      // Media will be updated via Realtime subscription
     } catch (error) {
       console.error('Reorder error:', error)
       throw error
@@ -123,41 +125,124 @@ function App() {
 
   const handleDelete = async (type, id) => {
     try {
-      const response = await fetch(`/api/media/${type}/${id}`, {
-        method: 'DELETE'
-      })
+      // First get the item to delete the file from storage
+      const { data: item } = await supabase
+        .from('media_items')
+        .select('storage_path, storage_bucket')
+        .eq('id', id)
+        .single()
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Delete failed')
+      if (item) {
+        // Delete from storage
+        const { error: storageError } = await supabase.storage
+          .from(item.storage_bucket || 'media')
+          .remove([item.storage_path])
+
+        if (storageError) {
+          console.warn('Storage delete error:', storageError)
+          // Continue with database delete even if storage delete fails
+        }
       }
-      // Media will be updated via socket
+
+      // Delete from database
+      const { error } = await supabase
+        .from('media_items')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      // Media will be updated via Realtime subscription
     } catch (error) {
       console.error('Delete error:', error)
       throw error
     }
   }
 
-  useEffect(() => {
-    // Fetch initial media
-    fetch('/api/media')
-      .then(res => res.json())
-      .then(data => {
-        setMedia(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching media:', err)
-        setLoading(false)
-      })
+  // Transform Supabase data to our format
+  const transformMediaData = (items) => {
+    const result = {
+      soundbites: [],
+      gifs: [],
+      images: []
+    }
 
-    // Listen for real-time updates
-    socket.on('media-updated', (updatedMedia) => {
-      setMedia(updatedMedia)
+    items.forEach(item => {
+      const transformed = {
+        id: item.id,
+        name: item.name,
+        url: supabase.storage.from(item.storage_bucket || 'media').getPublicUrl(item.storage_path).data.publicUrl,
+        type: item.type,
+        uploadedAt: item.uploaded_at,
+        size: item.size,
+        display_order: item.display_order
+      }
+
+      if (item.type === 'soundbites') {
+        result.soundbites.push(transformed)
+      } else if (item.type === 'gifs') {
+        result.gifs.push(transformed)
+      } else if (item.type === 'images') {
+        result.images.push(transformed)
+      }
     })
 
+    // Sort by display_order
+    Object.keys(result).forEach(type => {
+      result[type].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    })
+
+    return result
+  }
+
+  useEffect(() => {
+    // Fetch initial media
+    const fetchMedia = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('media_items')
+          .select('*')
+          .order('display_order', { ascending: true })
+
+        if (error) throw error
+
+        const transformed = transformMediaData(data || [])
+        setMedia(transformed)
+        setLoading(false)
+      } catch (err) {
+        console.error('Error fetching media:', err)
+        setLoading(false)
+      }
+    }
+
+    fetchMedia()
+
+    // Listen for real-time updates
+    const channel = supabase
+      .channel('media-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'media_items'
+        },
+        async () => {
+          // Refetch media on any change
+          const { data, error } = await supabase
+            .from('media_items')
+            .select('*')
+            .order('display_order', { ascending: true })
+
+          if (!error && data) {
+            const transformed = transformMediaData(data)
+            setMedia(transformed)
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
-      socket.off('media-updated')
+      supabase.removeChannel(channel)
     }
   }, [])
 
