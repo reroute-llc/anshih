@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator for Anshih PWA</title>
+  <style>
+    body {
+      font-family: 'Press Start 2P', cursive;
+      background: #f5e6d3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    canvas {
+      border: 4px solid #ff6600;
+      background: #fff8f0;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    .instructions {
+      margin-top: 20px;
+      text-align: center;
+      color: #331100;
+      font-size: 10px;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="iconCanvas" width="512" height="512"></canvas>
+  <div class="instructions">
+    <p>Right-click the canvas and "Save image as" to save as icon-512.png</p>
+    <p>Then resize to 192x192 for icon-192.png</p>
+  </div>
+  <script>
+    const canvas = document.getElementById('iconCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#f5e6d3';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Draw "ANSHIH" text in 80's style
+    ctx.fillStyle = '#ff6600';
+    ctx.font = 'bold 80px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ANSHIH', 256, 256);
+    
+    // Add some pixel decoration
+    ctx.fillStyle = '#ffaa00';
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      ctx.fillRect(x, y, 4, 4);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+.header {
+  background: linear-gradient(135deg, var(--light-orange) 0%, #ffd4a3 100%);
+  border-bottom: 4px solid var(--orange);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  z-index: 2;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 600px;
+  justify-content: center;
+}
+
+.logo {
+  font-size: 48px;
+  color: var(--orange);
+  letter-spacing: 8px;
+  margin: 0;
+}
+
+.header-subtitle {
+  font-size: 10px;
+  color: var(--red-orange);
+  letter-spacing: 4px;
+}
+
+.search-container {
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  padding: 12px 15px;
+  border: 3px solid var(--orange);
+  background: var(--light-bg);
+  color: var(--text-dark);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--red-orange);
+  background: #fff4e6;
+}
+
+.search-input::placeholder {
+  color: var(--orange);
+  opacity: 0.6;
+}
+
+.upload-btn {
+  flex-shrink: 0;
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 102, 0, 0.15) 50%,
+    transparent 100%
+  );
+  animation: scan 3s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .logo {
+    font-size: 32px;
+    letter-spacing: 4px;
+  }
+  
+  .header-subtitle {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+  
+  .header {
+    padding: 15px;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .search-container {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .search-input {
+    font-size: 9px;
+    padding: 10px 12px;
+  }
+  
+  .upload-btn {
+    width: 100%;
+  }
+}

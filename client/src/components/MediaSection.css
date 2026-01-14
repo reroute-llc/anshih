@@ -1,0 +1,342 @@
+.media-section {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+  padding: 15px 20px;
+  background: var(--light-orange);
+  border: 3px solid var(--orange);
+  border-left: 8px solid var(--orange);
+  width: 100%;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  position: relative;
+}
+
+.section-label-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 24px;
+  color: var(--orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  flex: 1;
+}
+
+.section-toggle-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.section-count {
+  font-size: 12px;
+  color: var(--red-orange);
+  padding: 5px 12px;
+  background: var(--light-bg);
+  border: 2px solid var(--orange);
+  margin-top: 0;
+}
+
+.section-toggle-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 2px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  min-width: 40px;
+  height: 40px;
+}
+
+.section-toggle-btn:hover {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.section-toggle-btn i {
+  font-size: 16px;
+  line-height: 1;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.section-toggle-btn.collapsed i {
+  transform: rotate(180deg);
+}
+
+.delete-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  margin-bottom: 20px;
+  border: 3px dashed var(--orange);
+  background: var(--light-orange);
+  opacity: 0.5;
+  transition: all 0.3s;
+  min-height: 100px;
+}
+
+.delete-dropzone.drag-over {
+  opacity: 1;
+  background: var(--red-orange);
+  border-color: var(--red-orange);
+  border-style: solid;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 100, 50, 0.5);
+}
+
+.delete-dropzone-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.delete-dropzone.drag-over .delete-dropzone-icon {
+  animation: shake 0.3s ease-in-out infinite;
+}
+
+.delete-dropzone-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.delete-dropzone.drag-over .delete-dropzone-text {
+  color: var(--light-bg);
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.drag-item {
+  cursor: grab;
+  transition: transform 0.2s;
+  position: relative;
+  touch-action: none;
+}
+
+.drag-item:active {
+  cursor: grabbing;
+}
+
+.drag-item[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+/* Allow dragging even when starting from interactive elements */
+.drag-item button,
+.drag-item input,
+.drag-item .media-name {
+  pointer-events: auto;
+}
+
+/* When dragging, temporarily disable pointer events on interactive elements to allow drag */
+.drag-item.dragging button,
+.drag-item.dragging input,
+.drag-item.dragging .media-name,
+.drag-item.dragging .media-preview {
+  pointer-events: none;
+}
+
+/* Prevent native image drag behavior but allow parent drag */
+.drag-item img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  user-select: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+}
+
+/* Ensure media-preview allows drag */
+.drag-item .media-preview {
+  pointer-events: auto;
+}
+
+/* Make sure images don't block drag events */
+.drag-item .media-image,
+.drag-item .soundbite-preview {
+  pointer-events: auto;
+}
+
+.drag-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.drag-item.drag-over {
+  position: relative;
+}
+
+.media-section.empty {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  border: 3px dashed var(--orange);
+  background: var(--light-orange);
+  border-radius: 0;
+  margin-top: 0;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: float 2s ease-in-out infinite;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: var(--orange);
+  margin-bottom: 10px;
+}
+
+.empty-hint {
+  font-size: 10px;
+  color: var(--red-orange);
+  opacity: 0.7;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 15px;
+  }
+  
+  .section-label-icon {
+    font-size: 24px;
+  }
+  
+  .section-title {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  
+  .section-header-right {
+    gap: 8px;
+  }
+  
+  .section-count {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  
+  .section-toggle-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 6px 10px;
+  }
+  
+  .section-toggle-btn i {
+    font-size: 14px;
+  }
+  
+  .delete-dropzone {
+    padding: 20px;
+    min-height: 80px;
+  }
+  
+  .delete-dropzone-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  
+  .delete-dropzone-text {
+    font-size: 10px;
+  }
+  
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+  }
+  
+  .empty-message {
+    padding: 30px 20px;
+  }
+  
+  .empty-icon {
+    font-size: 36px;
+  }
+  
+  .empty-text {
+    font-size: 12px;
+  }
+  
+  .empty-hint {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+}

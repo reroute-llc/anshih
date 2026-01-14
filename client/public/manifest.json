@@ -1,0 +1,38 @@
+{
+  "name": "Anshih - Official Media Hub",
+  "short_name": "Anshih",
+  "description": "A hub for Soundbites, GIFs, and Images used by Anshul",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5e6d3",
+  "theme_color": "#ff6600",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["entertainment", "multimedia"],
+  "screenshots": []
+}
