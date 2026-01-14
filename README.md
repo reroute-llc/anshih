@@ -115,18 +115,20 @@ The built files will be in `client/dist/`
 
 ## Deployment
 
-### Render Deployment (Recommended - Full Stack)
+### AWS Amplify Deployment (Recommended)
 
-See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for Render deployment guide.
+See [AMPLIFY_DEPLOYMENT.md](./AMPLIFY_DEPLOYMENT.md) for AWS Amplify deployment guide.
 
 **Quick setup:**
-1. Create Render account and connect GitHub
-2. Create new Web Service from GitHub repo
-3. Set environment variables in Render dashboard
-4. Deploy automatically on push to `main`
+1. Create AWS account and connect GitHub to Amplify
+2. Create new Amplify app from GitHub repo
+3. Deploy backend to AWS (Elastic Beanstalk, Lambda, or EC2)
+4. Set environment variables in both Amplify and backend
+5. Deploy automatically on push to `main`
 
 ### Other Deployment Options
 
+- **Render**: See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for Render deployment
 - **Railway**: See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for Railway deployment
 - **GitHub Pages**: See [GITHUB_DEPLOYMENT.md](./GITHUB_DEPLOYMENT.md) (frontend only)
 - **Manual**: See [DEPLOYMENT.md](./DEPLOYMENT.md) for manual deployment
