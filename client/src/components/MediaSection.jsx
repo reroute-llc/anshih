@@ -44,7 +44,8 @@ function SortableItem({ id, index, type, item, onMediaClick, onRename, overId, d
     if (e.target.closest('.media-name') || 
         e.target.closest('.media-name-input') ||
         e.target.closest('button') ||
-        e.target.closest('input')) {
+        e.target.closest('input') ||
+        e.target.closest('img')) {
       e.stopPropagation()
       return
     }
@@ -103,9 +104,9 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
-        delay: 250, // 250ms delay for touch devices (mobile) - requires long press
-        tolerance: 5, // Allow 5px movement during delay
+        distance: 10, // Increased distance for mobile to allow scrolling
+        delay: 300, // 300ms delay for touch devices (mobile) - requires long press
+        tolerance: 10, // Allow 10px movement during delay (allows scrolling)
       },
     }),
     useSensor(KeyboardSensor, {
