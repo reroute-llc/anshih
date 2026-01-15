@@ -34,11 +34,23 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
   const handleCopy = async () => {
     if (currentItem.type === 'gifs' || currentItem.type === 'images') {
       try {
-        const response = await fetch(mediaUrl)
+        // Fetch with CORS mode for Supabase Storage URLs
+        const response = await fetch(mediaUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`)
+        }
+        
         const blob = await response.blob()
         
+        // Ensure we have a valid blob type
+        const blobType = blob.type || (currentItem.type === 'gifs' ? 'image/gif' : 'image/png')
+        
         if (navigator.clipboard && navigator.clipboard.write) {
-          const clipboardItem = new ClipboardItem({ [blob.type]: blob })
+          const clipboardItem = new ClipboardItem({ [blobType]: blob })
           await navigator.clipboard.write([clipboardItem])
           setCopyFeedback('COPIED!')
           setTimeout(() => setCopyFeedback(null), 2000)

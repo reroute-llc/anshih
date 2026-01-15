@@ -44,15 +44,27 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
       const button = document.querySelector(`[data-copy-id="${item.id}"]`)
       
       try {
-        // Use UploadThing URL if available, otherwise fall back to local
+        // Use item.url (Supabase Storage URL) or fall back to local
         const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
-        // Fetch the image as a blob
-        const response = await fetch(mediaUrl)
+        
+        // Fetch the image as a blob with CORS mode
+        const response = await fetch(mediaUrl, {
+          mode: 'cors',
+          credentials: 'omit'
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`)
+        }
+        
         const blob = await response.blob()
+        
+        // Ensure we have a valid blob type
+        const blobType = blob.type || (type === 'gifs' ? 'image/gif' : 'image/png')
         
         // Copy the blob to clipboard
         if (navigator.clipboard && navigator.clipboard.write) {
-          const clipboardItem = new ClipboardItem({ [blob.type]: blob })
+          const clipboardItem = new ClipboardItem({ [blobType]: blob })
           await navigator.clipboard.write([clipboardItem])
           
           // Show feedback
