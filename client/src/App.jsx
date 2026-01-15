@@ -228,18 +228,53 @@ function App() {
         },
         async (payload) => {
           console.log('Realtime update received:', payload.eventType, payload)
-          // Refetch media on any change
-          const { data, error } = await supabase
-            .from('media_items')
-            .select('*')
-            .order('display_order', { ascending: true })
+          
+          // For UPDATE events, we can optimize by updating the specific item
+          // For INSERT/DELETE, we need to refetch to maintain order
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            setMedia(prevMedia => {
+              const updated = { ...prevMedia }
+              const itemType = payload.new.type
+              const itemId = payload.new.id
+              
+              // Find and update the item in the correct type array
+              const typeArray = updated[itemType] || []
+              const itemIndex = typeArray.findIndex(item => item.id === itemId)
+              
+              if (itemIndex !== -1) {
+                // Update the existing item
+                const updatedItem = {
+                  ...typeArray[itemIndex],
+                  name: payload.new.name,
+                  display_order: payload.new.display_order,
+                  updated_at: payload.new.updated_at
+                }
+                
+                // Reconstruct the array with the updated item
+                const newArray = [...typeArray]
+                newArray[itemIndex] = updatedItem
+                updated[itemType] = newArray
+                
+                return updated
+              }
+              
+              // If item not found, fall back to refetch
+              return prevMedia
+            })
+          } else {
+            // For INSERT/DELETE, refetch to maintain correct order
+            const { data, error } = await supabase
+              .from('media_items')
+              .select('*')
+              .order('display_order', { ascending: true })
 
-          if (!error && data) {
-            const transformed = transformMediaData(data)
-            setMedia(transformed)
-            console.log('Media updated via realtime')
-          } else if (error) {
-            console.error('Error refetching after realtime update:', error)
+            if (!error && data) {
+              const transformed = transformMediaData(data)
+              setMedia(transformed)
+              console.log('Media updated via realtime')
+            } else if (error) {
+              console.error('Error refetching after realtime update:', error)
+            }
           }
         }
       )
