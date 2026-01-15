@@ -1,13 +1,16 @@
 export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      // Use base path for GitHub Pages
-      const swPath = import.meta.env.GITHUB_PAGES === 'true' 
-        ? '/anshih/sw.js' 
-        : '/sw.js'
+      // Detect base path from current location
+      // If we're on GitHub Pages, the path will be /anshih/...
+      const basePath = window.location.pathname.startsWith('/anshih/') 
+        ? '/anshih' 
+        : ''
+      const swPath = `${basePath}/sw.js`
+      const scope = `${basePath}/`
       
       navigator.serviceWorker
-        .register(swPath)
+        .register(swPath, { scope })
         .then((registration) => {
           console.log('SW registered: ', registration)
           
