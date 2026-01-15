@@ -5,7 +5,7 @@ function Header({ onUploadClick, searchQuery, onSearchChange }) {
     <header className="header">
       <div className="header-content">
         <h1 className="logo">ANSHIH</h1>
-        <div className="header-subtitle">Official Media Hub</div>
+        <div className="header-subtitle">Evergreen Media Hub</div>
         <div className="header-actions">
           <div className="search-container">
             <input
