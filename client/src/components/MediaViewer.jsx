@@ -34,31 +34,75 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
   const handleCopy = async () => {
     if (currentItem.type === 'gifs' || currentItem.type === 'images') {
       try {
-        // Fetch with CORS mode for Supabase Storage URLs
-        const response = await fetch(mediaUrl, {
-          mode: 'cors',
-          credentials: 'omit'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.statusText}`)
-        }
-        
-        const blob = await response.blob()
-        
-        // Ensure we have a valid blob type
-        const blobType = blob.type || (currentItem.type === 'gifs' ? 'image/gif' : 'image/png')
-        
-        if (navigator.clipboard && navigator.clipboard.write) {
+        // Try method 1: Direct fetch and clipboard
+        try {
+          const response = await fetch(mediaUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-cache'
+          })
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+          
+          const blob = await response.blob()
+          
+          if (!blob || blob.size === 0) {
+            throw new Error('Empty blob received')
+          }
+          
+          // Ensure we have a valid blob type
+          const blobType = blob.type || (currentItem.type === 'gifs' ? 'image/gif' : 'image/png')
+          
+          if (navigator.clipboard && navigator.clipboard.write) {
+            const clipboardItem = new ClipboardItem({ [blobType]: blob })
+            await navigator.clipboard.write([clipboardItem])
+            setCopyFeedback('COPIED!')
+            setTimeout(() => setCopyFeedback(null), 2000)
+            return // Success!
+          } else {
+            throw new Error('Clipboard API not supported')
+          }
+        } catch (fetchError) {
+          console.warn('Direct fetch failed, trying canvas method:', fetchError)
+          
+          // Method 2: Use canvas to convert image to blob
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve
+            img.onerror = () => reject(new Error('Failed to load image'))
+            img.src = mediaUrl
+          })
+          
+          // Create canvas and draw image
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0)
+          
+          // Convert canvas to blob (await the promise)
+          const blobType = currentItem.type === 'gifs' ? 'image/gif' : 'image/png'
+          const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob)
+              } else {
+                reject(new Error('Failed to convert canvas to blob'))
+              }
+            }, blobType)
+          })
+          
           const clipboardItem = new ClipboardItem({ [blobType]: blob })
           await navigator.clipboard.write([clipboardItem])
           setCopyFeedback('COPIED!')
           setTimeout(() => setCopyFeedback(null), 2000)
-        } else {
-          throw new Error('Clipboard API not supported')
         }
       } catch (error) {
-        console.error('Copy failed:', error)
+        console.error('All copy methods failed:', error)
         // Fallback to copy URL
         handleCopyUrl()
       }
