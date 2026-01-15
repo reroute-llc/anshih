@@ -218,11 +218,7 @@ function App() {
 
     // Listen for real-time updates
     const channel = supabase
-      .channel('media-changes', {
-        config: {
-          broadcast: { self: true }
-        }
-      })
+      .channel('media-changes')
       .on(
         'postgres_changes',
         {
@@ -231,7 +227,7 @@ function App() {
           table: 'media_items'
         },
         async (payload) => {
-          console.log('Realtime update received:', payload.eventType)
+          console.log('Realtime update received:', payload.eventType, payload)
           // Refetch media on any change
           const { data, error } = await supabase
             .from('media_items')
@@ -241,21 +237,25 @@ function App() {
           if (!error && data) {
             const transformed = transformMediaData(data)
             setMedia(transformed)
+            console.log('Media updated via realtime:', transformed)
           } else if (error) {
             console.error('Error refetching after realtime update:', error)
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Realtime subscription status:', status)
+        if (err) {
+          console.error('Realtime subscription error:', err)
+        }
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to realtime updates')
+          console.log('✅ Successfully subscribed to realtime updates')
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('Realtime channel error - check Supabase Realtime settings')
+          console.error('❌ Realtime channel error - check Supabase Realtime settings')
         } else if (status === 'TIMED_OUT') {
-          console.error('Realtime subscription timed out')
+          console.error('❌ Realtime subscription timed out')
         } else if (status === 'CLOSED') {
-          console.warn('Realtime channel closed')
+          console.warn('⚠️ Realtime channel closed')
         }
       })
 
