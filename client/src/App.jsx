@@ -217,17 +217,14 @@ function App() {
     fetchMedia()
 
     // Listen for real-time updates
-    // Use a unique channel name to avoid conflicts
-    const channelName = `media-changes-${Date.now()}`
     const channel = supabase
-      .channel(channelName)
+      .channel('media-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'media_items',
-          filter: '*' // Listen to all changes
+          table: 'media_items'
         },
         async (payload) => {
           console.log('Realtime update received:', payload.eventType, payload)
