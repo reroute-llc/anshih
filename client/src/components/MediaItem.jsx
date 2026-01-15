@@ -43,8 +43,10 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
     if (type === 'gifs' || type === 'images') {
       const button = document.querySelector(`[data-copy-id="${item.id}"]`)
       
-      // Detect mobile device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      // Detect mobile device - check multiple methods
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0)
       const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
       
       // On mobile, ONLY use Share API (ClipboardItem doesn't work reliably on mobile)

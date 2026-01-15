@@ -33,8 +33,10 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
 
   const handleCopy = async () => {
     if (currentItem.type === 'gifs' || currentItem.type === 'images') {
-      // Detect mobile device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      // Detect mobile device - check multiple methods
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0)
       
       // On mobile, ONLY use Share API (ClipboardItem doesn't work reliably on mobile)
       if (isMobile) {
