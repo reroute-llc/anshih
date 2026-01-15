@@ -210,6 +210,7 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
       } catch (error) {
         console.error('All copy methods failed:', error)
         // Fallback: copy URL instead
+        // item.url is already a full URL from Supabase, don't prepend origin
         const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(url)

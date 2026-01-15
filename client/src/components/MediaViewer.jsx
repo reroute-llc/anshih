@@ -159,28 +159,34 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
   }
 
   const handleCopyUrl = async () => {
-    const url = `${window.location.origin}${mediaUrl}`
+    // Use the full URL directly (item.url is already a full URL from Supabase)
+    const url = mediaUrl.startsWith('http') ? mediaUrl : `${window.location.origin}${mediaUrl}`
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url)
         setCopyFeedback('URL COPIED!')
         setTimeout(() => setCopyFeedback(null), 2000)
       } else {
-        // Fallback
+        // Fallback: copy URL using execCommand (older browsers)
         const textArea = document.createElement('textarea')
         textArea.value = url
         textArea.style.position = 'fixed'
         textArea.style.opacity = '0'
+        textArea.style.pointerEvents = 'none'
         document.body.appendChild(textArea)
         textArea.select()
-        document.execCommand('copy')
+        try {
+          document.execCommand('copy')
+          setCopyFeedback('URL COPIED!')
+          setTimeout(() => setCopyFeedback(null), 2000)
+        } catch (e) {
+          console.error('Failed to copy URL:', e)
+        }
         document.body.removeChild(textArea)
-        setCopyFeedback('URL COPIED!')
-        setTimeout(() => setCopyFeedback(null), 2000)
       }
     } catch (error) {
       console.error('Copy URL failed:', error)
-      alert(`URL: ${url}`)
+      // Never show alert - just log the error
     }
   }
 
