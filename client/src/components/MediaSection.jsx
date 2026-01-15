@@ -38,6 +38,22 @@ function SortableItem({ id, index, type, item, onMediaClick, onRename, overId, d
 
   const isOver = overId === item.id
 
+  // Prevent drag when clicking on interactive elements
+  const handlePointerDown = (e) => {
+    // Don't start drag if clicking on interactive elements
+    if (e.target.closest('.media-name') || 
+        e.target.closest('.media-name-input') ||
+        e.target.closest('button') ||
+        e.target.closest('input')) {
+      e.stopPropagation()
+      return
+    }
+    // Allow drag to proceed
+    if (listeners?.onPointerDown) {
+      listeners.onPointerDown(e)
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -45,7 +61,8 @@ function SortableItem({ id, index, type, item, onMediaClick, onRename, overId, d
       data-id={item.id}
       className={`drag-item ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isOver && dropSide ? `drop-${dropSide}` : ''}`}
       {...attributes}
-      {...listeners}
+      onPointerDown={handlePointerDown}
+      onMouseDown={listeners?.onMouseDown}
     >
       <MediaItem
         type={type}
