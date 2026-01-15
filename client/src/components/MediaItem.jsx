@@ -47,61 +47,72 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
       
-      try {
-        // Check if ClipboardItem is supported
-        const supportsClipboardItem = typeof ClipboardItem !== 'undefined'
-        
-        if (!supportsClipboardItem && isMobile) {
-          // On mobile without ClipboardItem support, use Share API or download
-          if (navigator.share) {
+      // On mobile, ONLY use Share API (ClipboardItem doesn't work reliably on mobile)
+      if (isMobile) {
+        if (navigator.share) {
+          try {
+            console.log('Trying Share API on mobile')
+            const response = await fetch(mediaUrl, {
+              mode: 'cors',
+              credentials: 'omit',
+              cache: 'no-cache'
+            })
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch: ${response.statusText}`)
+            }
+            
+            const blob = await response.blob()
+            const file = new File([blob], item.name, { type: blob.type || (type === 'gifs' ? 'image/gif' : 'image/png') })
+            
+            // Try sharing the file (try even if canShare says no, as some browsers don't support canShare)
             try {
-              const response = await fetch(mediaUrl, {
-                mode: 'cors',
-                credentials: 'omit',
-                cache: 'no-cache'
-              })
-              const blob = await response.blob()
-              const file = new File([blob], item.name, { type: blob.type })
-              
-              if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file] })
-                if (button) {
-                  const originalText = button.textContent
-                  button.textContent = 'SHARED!'
-                  button.style.background = 'var(--orange)'
-                  button.style.color = 'var(--light-bg)'
-                  setTimeout(() => {
-                    button.textContent = originalText
-                    button.style.background = ''
-                    button.style.color = ''
-                  }, 2000)
-                }
-                return
+              await navigator.share({ files: [file] })
+              if (button) {
+                const originalText = button.textContent
+                button.textContent = 'SHARED!'
+                button.style.background = 'var(--orange)'
+                button.style.color = 'var(--light-bg)'
+                setTimeout(() => {
+                  button.textContent = originalText
+                  button.style.background = ''
+                  button.style.color = ''
+                }, 2000)
               }
+              return
             } catch (shareError) {
-              console.warn('Share API failed:', shareError)
+              console.warn('Share API failed, falling back to URL copy:', shareError)
             }
-          }
-          // Fallback: copy URL on mobile
-          const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(url)
-            if (button) {
-              const originalText = button.textContent
-              button.textContent = 'URL COPIED!'
-              button.style.background = 'var(--orange)'
-              button.style.color = 'var(--light-bg)'
-              setTimeout(() => {
-                button.textContent = originalText
-                button.style.background = ''
-                button.style.color = ''
-              }, 2000)
-            }
-            return
+          } catch (shareError) {
+            console.warn('Share API error, falling back to URL copy:', shareError)
           }
         }
         
-        // Desktop or mobile with ClipboardItem support - try to copy the actual image
+        // Mobile fallback: copy URL (no alert)
+        const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url)
+          if (button) {
+            const originalText = button.textContent
+            button.textContent = 'URL COPIED!'
+            button.style.background = 'var(--orange)'
+            button.style.color = 'var(--light-bg)'
+            setTimeout(() => {
+              button.textContent = originalText
+              button.style.background = ''
+              button.style.color = ''
+            }, 2000)
+          }
+        }
+        return // Don't try ClipboardItem on mobile
+      }
+      
+      // Desktop: try ClipboardItem
+      try {
+        // Check if ClipboardItem is actually supported and works
+        const supportsClipboardItem = typeof ClipboardItem !== 'undefined'
+        
+        // Desktop - try to copy the actual image
         try {
           const response = await fetch(mediaUrl, {
             mode: 'cors',
@@ -214,7 +225,31 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
             }, 2000)
           }
         } else {
-          alert(`URL: ${url}`)
+          // Last resort: copy URL using execCommand (older browsers)
+          const textArea = document.createElement('textarea')
+          textArea.value = url
+          textArea.style.position = 'fixed'
+          textArea.style.opacity = '0'
+          textArea.style.pointerEvents = 'none'
+          document.body.appendChild(textArea)
+          textArea.select()
+          try {
+            document.execCommand('copy')
+            if (button) {
+              const originalText = button.textContent
+              button.textContent = 'URL COPIED!'
+              button.style.background = 'var(--orange)'
+              button.style.color = 'var(--light-bg)'
+              setTimeout(() => {
+                button.textContent = originalText
+                button.style.background = ''
+                button.style.color = ''
+              }, 2000)
+            }
+          } catch (e) {
+            console.error('Failed to copy URL:', e)
+          }
+          document.body.removeChild(textArea)
         }
       }
     }
