@@ -104,6 +104,8 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
+        delay: 250, // 250ms delay for touch devices (mobile) - requires long press
+        tolerance: 5, // Allow 5px movement during delay
       },
     }),
     useSensor(KeyboardSensor, {
