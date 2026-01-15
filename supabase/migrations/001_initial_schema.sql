@@ -49,7 +49,18 @@ create policy "Allow public delete access"
   using (true);
 
 -- Enable Realtime for media_items table
-alter publication supabase_realtime add table public.media_items;
+-- Note: This will fail silently if the table is already in the publication
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' 
+    and tablename = 'media_items'
+    and schemaname = 'public'
+  ) then
+    alter publication supabase_realtime add table public.media_items;
+  end if;
+end $$;
 
 -- Create function to update updated_at timestamp
 create or replace function public.update_updated_at_column()
