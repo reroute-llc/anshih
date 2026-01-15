@@ -33,7 +33,33 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
 
   const handleCopy = async () => {
     if (currentItem.type === 'gifs' || currentItem.type === 'images') {
+      // Detect mobile device
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      const supportsClipboardItem = typeof ClipboardItem !== 'undefined'
+      
       try {
+        // On mobile without ClipboardItem support, try Share API first
+        if (!supportsClipboardItem && isMobile && navigator.share) {
+          try {
+            const response = await fetch(mediaUrl, {
+              mode: 'cors',
+              credentials: 'omit',
+              cache: 'no-cache'
+            })
+            const blob = await response.blob()
+            const file = new File([blob], currentItem.name, { type: blob.type })
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file] })
+              setCopyFeedback('SHARED!')
+              setTimeout(() => setCopyFeedback(null), 2000)
+              return
+            }
+          } catch (shareError) {
+            console.warn('Share API failed:', shareError)
+          }
+        }
+        
         // Try method 1: Direct fetch and clipboard
         try {
           const response = await fetch(mediaUrl, {
@@ -55,14 +81,14 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
           // Ensure we have a valid blob type
           const blobType = blob.type || (currentItem.type === 'gifs' ? 'image/gif' : 'image/png')
           
-          if (navigator.clipboard && navigator.clipboard.write) {
+          if (navigator.clipboard && navigator.clipboard.write && supportsClipboardItem) {
             const clipboardItem = new ClipboardItem({ [blobType]: blob })
             await navigator.clipboard.write([clipboardItem])
             setCopyFeedback('COPIED!')
             setTimeout(() => setCopyFeedback(null), 2000)
             return // Success!
           } else {
-            throw new Error('Clipboard API not supported')
+            throw new Error('ClipboardItem not supported')
           }
         } catch (fetchError) {
           console.warn('Direct fetch failed, trying canvas method:', fetchError)
@@ -96,10 +122,15 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
             }, blobType)
           })
           
-          const clipboardItem = new ClipboardItem({ [blobType]: blob })
-          await navigator.clipboard.write([clipboardItem])
-          setCopyFeedback('COPIED!')
-          setTimeout(() => setCopyFeedback(null), 2000)
+          if (navigator.clipboard && navigator.clipboard.write && supportsClipboardItem) {
+            const clipboardItem = new ClipboardItem({ [blobType]: blob })
+            await navigator.clipboard.write([clipboardItem])
+            setCopyFeedback('COPIED!')
+            setTimeout(() => setCopyFeedback(null), 2000)
+            return
+          } else {
+            throw new Error('ClipboardItem not supported')
+          }
         }
       } catch (error) {
         console.error('All copy methods failed:', error)

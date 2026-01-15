@@ -43,11 +43,65 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
     if (type === 'gifs' || type === 'images') {
       const button = document.querySelector(`[data-copy-id="${item.id}"]`)
       
+      // Detect mobile device
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
+      
       try {
-        // Use item.url (Supabase Storage URL) or fall back to local
-        const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
+        // Check if ClipboardItem is supported
+        const supportsClipboardItem = typeof ClipboardItem !== 'undefined'
         
-        // Try method 1: Direct fetch and clipboard
+        if (!supportsClipboardItem && isMobile) {
+          // On mobile without ClipboardItem support, use Share API or download
+          if (navigator.share) {
+            try {
+              const response = await fetch(mediaUrl, {
+                mode: 'cors',
+                credentials: 'omit',
+                cache: 'no-cache'
+              })
+              const blob = await response.blob()
+              const file = new File([blob], item.name, { type: blob.type })
+              
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file] })
+                if (button) {
+                  const originalText = button.textContent
+                  button.textContent = 'SHARED!'
+                  button.style.background = 'var(--orange)'
+                  button.style.color = 'var(--light-bg)'
+                  setTimeout(() => {
+                    button.textContent = originalText
+                    button.style.background = ''
+                    button.style.color = ''
+                  }, 2000)
+                }
+                return
+              }
+            } catch (shareError) {
+              console.warn('Share API failed:', shareError)
+            }
+          }
+          // Fallback: copy URL on mobile
+          const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url)
+            if (button) {
+              const originalText = button.textContent
+              button.textContent = 'URL COPIED!'
+              button.style.background = 'var(--orange)'
+              button.style.color = 'var(--light-bg)'
+              setTimeout(() => {
+                button.textContent = originalText
+                button.style.background = ''
+                button.style.color = ''
+              }, 2000)
+            }
+            return
+          }
+        }
+        
+        // Desktop or mobile with ClipboardItem support - try to copy the actual image
         try {
           const response = await fetch(mediaUrl, {
             mode: 'cors',
@@ -69,7 +123,7 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
           const blobType = blob.type || (type === 'gifs' ? 'image/gif' : 'image/png')
           
           // Copy the blob to clipboard
-          if (navigator.clipboard && navigator.clipboard.write) {
+          if (navigator.clipboard && navigator.clipboard.write && supportsClipboardItem) {
             const clipboardItem = new ClipboardItem({ [blobType]: blob })
             await navigator.clipboard.write([clipboardItem])
             
@@ -121,20 +175,25 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
             }, blobType)
           })
           
-          const clipboardItem = new ClipboardItem({ [blobType]: blob })
-          await navigator.clipboard.write([clipboardItem])
-          
-          // Show feedback
-          if (button) {
-            const originalText = button.textContent
-            button.textContent = 'COPIED!'
-            button.style.background = 'var(--orange)'
-            button.style.color = 'var(--light-bg)'
-            setTimeout(() => {
-              button.textContent = originalText
-              button.style.background = ''
-              button.style.color = ''
-            }, 2000)
+          if (navigator.clipboard && navigator.clipboard.write && supportsClipboardItem) {
+            const clipboardItem = new ClipboardItem({ [blobType]: blob })
+            await navigator.clipboard.write([clipboardItem])
+            
+            // Show feedback
+            if (button) {
+              const originalText = button.textContent
+              button.textContent = 'COPIED!'
+              button.style.background = 'var(--orange)'
+              button.style.color = 'var(--light-bg)'
+              setTimeout(() => {
+                button.textContent = originalText
+                button.style.background = ''
+                button.style.color = ''
+              }, 2000)
+            }
+            return
+          } else {
+            throw new Error('ClipboardItem not supported')
           }
         }
       } catch (error) {
@@ -145,7 +204,7 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
           await navigator.clipboard.writeText(url)
           if (button) {
             const originalText = button.textContent
-            button.textContent = 'COPIED!'
+            button.textContent = 'URL COPIED!'
             button.style.background = 'var(--orange)'
             button.style.color = 'var(--light-bg)'
             setTimeout(() => {
