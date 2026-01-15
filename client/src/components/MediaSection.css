@@ -162,10 +162,11 @@
   cursor: grab;
   transition: transform 0.2s;
   position: relative;
-  touch-action: pan-y pan-x; /* Allow scrolling in all directions */
+  /* Don't restrict touch-action - let the delay handle scroll vs drag */
+  /* The 250ms delay allows scrolling to work naturally */
 }
 
-/* Only disable touch-action when actually dragging */
+/* Only restrict touch-action when actually dragging */
 .drag-item.dragging {
   touch-action: none;
 }

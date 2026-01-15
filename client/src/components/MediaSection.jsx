@@ -104,9 +104,9 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10, // Increased distance for mobile to allow scrolling
-        delay: 300, // 300ms delay for touch devices (mobile) - requires long press
-        tolerance: 10, // Allow 10px movement during delay (allows scrolling)
+        delay: 300, // 300ms delay - during this time, scrolling works normally
+        tolerance: 5, // Allow 5px movement during delay (allows scrolling)
+        distance: 0, // No distance requirement - delay is the main constraint
       },
     }),
     useSensor(KeyboardSensor, {
