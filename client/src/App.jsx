@@ -217,14 +217,17 @@ function App() {
     fetchMedia()
 
     // Listen for real-time updates
+    // Use a unique channel name to avoid conflicts
+    const channelName = `media-changes-${Date.now()}`
     const channel = supabase
-      .channel('media-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'media_items'
+          table: 'media_items',
+          filter: '*' // Listen to all changes
         },
         async (payload) => {
           console.log('Realtime update received:', payload.eventType, payload)
@@ -237,7 +240,7 @@ function App() {
           if (!error && data) {
             const transformed = transformMediaData(data)
             setMedia(transformed)
-            console.log('Media updated via realtime:', transformed)
+            console.log('Media updated via realtime')
           } else if (error) {
             console.error('Error refetching after realtime update:', error)
           }
