@@ -6,6 +6,11 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
   const hasNext = currentIndex < media.length - 1
   const hasPrevious = currentIndex > 0
   const [copyFeedback, setCopyFeedback] = useState(null)
+  
+  // Detect mobile device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window) || 
+                   (navigator.maxTouchPoints > 0)
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -309,29 +314,31 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
           )}
         </div>
 
-        <div className="media-viewer-actions">
-          <button 
-            className="media-viewer-action-btn"
-            onClick={handleCopy}
-            title="Copy media to clipboard"
-          >
-            {copyFeedback === 'COPIED!' ? 'COPIED!' : 'COPY'}
-          </button>
-          <button 
-            className="media-viewer-action-btn"
-            onClick={handleCopyUrl}
-            title="Copy URL to clipboard"
-          >
-            {copyFeedback === 'URL COPIED!' ? 'COPIED!' : 'COPY URL'}
-          </button>
-          <button 
-            className="media-viewer-action-btn"
-            onClick={handleDownload}
-            title="Download"
-          >
-            <i className="hn hn-download"></i>
-          </button>
-        </div>
+        {!isMobile && (
+          <div className="media-viewer-actions">
+            <button 
+              className="media-viewer-action-btn"
+              onClick={handleCopy}
+              title="Copy media to clipboard"
+            >
+              {copyFeedback === 'COPIED!' ? 'COPIED!' : 'COPY'}
+            </button>
+            <button 
+              className="media-viewer-action-btn"
+              onClick={handleCopyUrl}
+              title="Copy URL to clipboard"
+            >
+              {copyFeedback === 'URL COPIED!' ? 'COPIED!' : 'COPY URL'}
+            </button>
+            <button 
+              className="media-viewer-action-btn"
+              onClick={handleDownload}
+              title="Download"
+            >
+              <i className="hn hn-download"></i>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -8,6 +8,11 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
   const [editName, setEditName] = useState(item.name)
   const clickStartPos = { x: 0, y: 0 }
   const isDragging = { current: false }
+  
+  // Detect mobile device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window) || 
+                   (navigator.maxTouchPoints > 0)
 
   useEffect(() => {
     setEditName(item.name)
@@ -427,36 +432,42 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
               >
                 {isPlaying ? 'STOP' : 'PLAY'}
               </button>
-              <button 
-                className="media-action-btn media-download-btn"
-                onClick={handleDownload}
-                title="Download"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-              >
-                <i className="hn hn-download"></i>
-              </button>
+              {!isMobile && (
+                <button 
+                  className="media-action-btn media-download-btn"
+                  onClick={handleDownload}
+                  title="Download"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                >
+                  <i className="hn hn-download"></i>
+                </button>
+              )}
             </>
           ) : (
             <>
-              <button 
-                className="media-action-btn"
-                onClick={handleCopyClick}
-                data-copy-id={item.id}
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-              >
-                COPY
-              </button>
-              <button 
-                className="media-action-btn media-download-btn"
-                onClick={handleDownload}
-                title="Download"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-              >
-                <i className="hn hn-download"></i>
-              </button>
+              {!isMobile && (
+                <>
+                  <button 
+                    className="media-action-btn"
+                    onClick={handleCopyClick}
+                    data-copy-id={item.id}
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    COPY
+                  </button>
+                  <button 
+                    className="media-action-btn media-download-btn"
+                    onClick={handleDownload}
+                    title="Download"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    <i className="hn hn-download"></i>
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
