@@ -169,6 +169,20 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
     document.addEventListener('touchmove', handlePointerMove, { passive: true })
   }
 
+  const handleDragCancel = () => {
+    // Clean up when drag is cancelled (e.g., by scrolling on mobile)
+    if (mouseMoveHandlerRef.current) {
+      document.removeEventListener('mousemove', mouseMoveHandlerRef.current)
+      document.removeEventListener('touchmove', mouseMoveHandlerRef.current)
+      mouseMoveHandlerRef.current = null
+    }
+
+    setActiveId(null)
+    setOverId(null)
+    setDropSide(null)
+    setMousePosition({ x: 0, y: 0 })
+  }
+
   const handleDragOver = (event) => {
     const { active, over } = event
     
@@ -311,9 +325,6 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
 
       // Ensure targetIndex is within bounds
       targetIndex = Math.max(0, Math.min(targetIndex, items.length))
-      
-      // Debug logging
-      console.log('Reorder:', { oldIndex, newIndex, dropSide, targetIndex, itemCount: items.length })
 
       // Only reorder if the position actually changes
       if (onReorder && targetIndex !== oldIndex) {
@@ -375,6 +386,7 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
           autoScroll={{ 
             threshold: { x: 0.2, y: 0.2 },
             enabled: true,
