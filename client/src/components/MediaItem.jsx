@@ -104,11 +104,12 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
           const file = new File([blob], item.name, { type: blob.type || 'image/png' })
           
           // Try sharing the file (allows user to save/copy via share sheet)
+          // Note: Many mobile browsers don't support sharing files, so this may fail
           await navigator.share({ files: [file] })
           showFeedback('SHARED!')
           return
         } catch (shareError) {
-          console.warn('Share API failed, trying ClipboardItem:', shareError)
+          console.warn('Share API failed (may not support files), trying ClipboardItem:', shareError)
           // Fall through to ClipboardItem attempt
         }
       }
@@ -209,26 +210,32 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
           }
         }
         
-        // Last resort: copy URL
-        const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(url)
-          showFeedback('URL COPIED!')
-        } else {
-          const textArea = document.createElement('textarea')
-          textArea.value = url
-          textArea.style.position = 'fixed'
-          textArea.style.opacity = '0'
-          textArea.style.pointerEvents = 'none'
-          document.body.appendChild(textArea)
-          textArea.select()
-          try {
-            document.execCommand('copy')
+        // Last resort: copy URL (use same logic as Copy URL button)
+        const url = mediaUrl.startsWith('http') ? mediaUrl : `${window.location.origin}${mediaUrl}`
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url)
             showFeedback('URL COPIED!')
-          } catch (e) {
-            console.error('Failed to copy URL:', e)
+          } else {
+            const textArea = document.createElement('textarea')
+            textArea.value = url
+            textArea.style.position = 'fixed'
+            textArea.style.opacity = '0'
+            textArea.style.pointerEvents = 'none'
+            document.body.appendChild(textArea)
+            textArea.select()
+            try {
+              document.execCommand('copy')
+              showFeedback('URL COPIED!')
+            } catch (e) {
+              console.error('Failed to copy URL:', e)
+              showFeedback('COPY FAILED!')
+            }
+            document.body.removeChild(textArea)
           }
-          document.body.removeChild(textArea)
+        } catch (error) {
+          console.error('Copy URL failed:', error)
+          showFeedback('COPY FAILED!')
         }
       }
     }

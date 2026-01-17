@@ -170,7 +170,7 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
           }
         }
         
-        // Last resort: copy URL
+        // Last resort: copy URL (use handleCopyUrl which has proper error handling)
         handleCopyUrl()
       }
     } else {
