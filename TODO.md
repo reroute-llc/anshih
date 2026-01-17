@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Copying and saving media on mobile
+- [x] Copying and saving media on mobile
 - [ ] Rearranging items reliably
 - [ ] Clipboard collection
 - [ ] Proper filtering
