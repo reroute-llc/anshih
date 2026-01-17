@@ -6,6 +6,7 @@ export default defineConfig({
   base: process.env.GITHUB_PAGES === 'true' ? '/anshih/' : '/',
   server: {
     port: 3000,
+    host: '0.0.0.0', // Allow access from network (for mobile testing)
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

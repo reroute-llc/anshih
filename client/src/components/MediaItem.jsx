@@ -44,6 +44,9 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
       const button = document.querySelector(`[data-copy-id="${item.id}"]`)
       const mediaUrl = item.url || `/api/media/${type}/${item.filename}`
       const supportsClipboardItem = typeof ClipboardItem !== 'undefined'
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                       ('ontouchstart' in window) || 
+                       (navigator.maxTouchPoints > 0)
       
       const showFeedback = (message) => {
         if (button) {
@@ -59,7 +62,58 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
         }
       }
       
-      // Try to copy the actual image to clipboard (works on both desktop and mobile)
+      // For GIFs on mobile, copy URL (expected behavior)
+      if (type === 'gifs' && isMobile) {
+        const url = item.url || `${window.location.origin}/api/media/${type}/${item.filename}`
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url)
+          showFeedback('URL COPIED!')
+        } else {
+          const textArea = document.createElement('textarea')
+          textArea.value = url
+          textArea.style.position = 'fixed'
+          textArea.style.opacity = '0'
+          textArea.style.pointerEvents = 'none'
+          document.body.appendChild(textArea)
+          textArea.select()
+          try {
+            document.execCommand('copy')
+            showFeedback('URL COPIED!')
+          } catch (e) {
+            console.error('Failed to copy URL:', e)
+          }
+          document.body.removeChild(textArea)
+        }
+        return
+      }
+      
+      // For images on mobile, prioritize Share API to copy the actual image
+      if (type === 'images' && isMobile && navigator.share) {
+        try {
+          const response = await fetch(mediaUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-cache'
+          })
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.statusText}`)
+          }
+          
+          const blob = await response.blob()
+          const file = new File([blob], item.name, { type: blob.type || 'image/png' })
+          
+          // Try sharing the file (allows user to save/copy via share sheet)
+          await navigator.share({ files: [file] })
+          showFeedback('SHARED!')
+          return
+        } catch (shareError) {
+          console.warn('Share API failed, trying ClipboardItem:', shareError)
+          // Fall through to ClipboardItem attempt
+        }
+      }
+      
+      // Try ClipboardItem (works on desktop and some mobile browsers)
       try {
         // Method 1: Direct fetch and ClipboardItem
         try {
@@ -129,14 +183,10 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
           }
         }
       } catch (error) {
-        console.warn('ClipboardItem failed, trying Share API as fallback:', error)
+        console.warn('ClipboardItem failed:', error)
         
-        // Fallback: Use Share API (especially useful on mobile)
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-                         ('ontouchstart' in window) || 
-                         (navigator.maxTouchPoints > 0)
-        
-        if (isMobile && navigator.share) {
+        // For images on mobile, try Share API again if ClipboardItem failed
+        if (type === 'images' && isMobile && navigator.share) {
           try {
             const response = await fetch(mediaUrl, {
               mode: 'cors',
@@ -149,18 +199,13 @@ function MediaItem({ type, item, onMediaClick, onRename }) {
             }
             
             const blob = await response.blob()
-            const file = new File([blob], item.name, { type: blob.type || (type === 'gifs' ? 'image/gif' : 'image/png') })
+            const file = new File([blob], item.name, { type: blob.type || 'image/png' })
             
-            // Try sharing the file (allows user to save/copy via share sheet)
-            try {
-              await navigator.share({ files: [file] })
-              showFeedback('SHARED!')
-              return
-            } catch (shareError) {
-              console.warn('Share API with file failed, trying URL:', shareError)
-            }
-          } catch (fetchError) {
-            console.warn('Share API fetch error:', fetchError)
+            await navigator.share({ files: [file] })
+            showFeedback('SHARED!')
+            return
+          } catch (shareError) {
+            console.warn('Share API also failed:', shareError)
           }
         }
         
