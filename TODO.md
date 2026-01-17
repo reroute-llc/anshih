@@ -2,7 +2,7 @@
 
 - [x] Copying and saving media on mobile
 - [x] Rearranging items reliably
-- [ ] Text collection
+- [x] Text collection
 - [ ] Proper filtering
 - [ ] Key bind shortcuts
 - [ ] More compact and ergonomic design
