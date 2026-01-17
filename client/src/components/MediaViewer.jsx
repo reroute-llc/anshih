@@ -339,6 +339,11 @@ function MediaViewer({ media, currentIndex, onClose, onNext, onPrevious }) {
             </button>
           </div>
         )}
+        {isMobile && currentItem.type !== 'soundbites' && (
+          <div className="media-viewer-mobile-hint">
+            Tap and hold for more options
+          </div>
+        )}
       </div>
     </div>
   )
