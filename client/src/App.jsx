@@ -101,8 +101,8 @@ function App() {
       const clampedSource = Math.max(0, Math.min(sourceIndex, items.length - 1))
       const clampedTarget = Math.max(0, Math.min(targetIndex, items.length))
       
-      // If indices are the same or adjacent, no reorder needed
-      if (clampedSource === clampedTarget || Math.abs(clampedSource - clampedTarget) === 1) {
+      // If indices are the same, no reorder needed
+      if (clampedSource === clampedTarget) {
         return
       }
       

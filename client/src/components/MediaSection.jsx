@@ -211,9 +211,22 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
         }
         
         // Determine side based on pointer position relative to center
-        // Use a 30% threshold for more reliable detection
-        const threshold = rect.width * 0.3
-        const side = pointerX < itemCenterX ? 'left' : 'right'
+        // Use a 25% threshold for more reliable detection
+        const threshold = rect.width * 0.25
+        let side
+        
+        if (pointerX < itemCenterX - threshold) {
+          side = 'left'
+        } else if (pointerX > itemCenterX + threshold) {
+          side = 'right'
+        } else {
+          // In the middle zone, use drag direction
+          // If dragging right (oldIndex < newIndex), default to right
+          // If dragging left (oldIndex > newIndex), default to left
+          const oldIndex = items.findIndex(item => item.id === active.id)
+          const newIndex = items.findIndex(item => item.id === over.id)
+          side = oldIndex < newIndex ? 'right' : 'left'
+        }
         
         setDropSide(side)
       } else {
@@ -264,26 +277,43 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
       }
       
       // Calculate target index based on drop side
-      // Simplified logic: if dropping on left, insert before; if right, insert after
+      // arrayMove(array, oldIndex, newIndex) moves item from oldIndex to newIndex
+      // When moving right (oldIndex < newIndex), arrayMove accounts for removal
+      // When moving left (oldIndex > newIndex), arrayMove accounts for removal
       let targetIndex
       
       if (dropSide === 'left') {
-        // Insert before the target
+        // Insert before the target item
         targetIndex = newIndex
-        // If dragging from after the target, no adjustment needed
-        // If dragging from before, items shift, so we stay at newIndex
       } else if (dropSide === 'right') {
-        // Insert after the target
-        targetIndex = newIndex + 1
-        // If dragging from before the target, items shift, so we need newIndex + 1
-        // If dragging from after, we still want newIndex + 1
+        // Insert after the target item
+        // When moving right, we need to account for the item being removed
+        if (oldIndex < newIndex) {
+          // Moving right: after removal, target is at newIndex, so insert at newIndex + 1
+          // But arrayMove already accounts for removal, so we use newIndex + 1
+          targetIndex = newIndex + 1
+        } else {
+          // Moving left: target stays at newIndex, so insert at newIndex + 1
+          targetIndex = newIndex + 1
+        }
       } else {
-        // Fallback: use simple arrayMove logic (insert after target)
-        targetIndex = oldIndex < newIndex ? newIndex + 1 : newIndex
+        // Fallback: use direction-based logic
+        // When dragging right, insert after target
+        // When dragging left, insert before target
+        if (oldIndex < newIndex) {
+          // Dragging right: insert after target
+          targetIndex = newIndex + 1
+        } else {
+          // Dragging left: insert before target
+          targetIndex = newIndex
+        }
       }
 
       // Ensure targetIndex is within bounds
       targetIndex = Math.max(0, Math.min(targetIndex, items.length))
+      
+      // Debug logging
+      console.log('Reorder:', { oldIndex, newIndex, dropSide, targetIndex, itemCount: items.length })
 
       // Only reorder if the position actually changes
       if (onReorder && targetIndex !== oldIndex) {
