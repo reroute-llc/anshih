@@ -164,7 +164,8 @@
   cursor: not-allowed;
 }
 
-.url-selector {
+.url-selector,
+.text-selector {
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -172,7 +173,8 @@
 }
 
 .url-input,
-.name-input {
+.name-input,
+.text-input {
   font-family: 'Press Start 2P', cursive;
   font-size: 10px;
   padding: 12px;
@@ -181,17 +183,27 @@
   color: var(--text-dark);
   width: 100%;
   box-sizing: border-box;
+  resize: vertical;
+}
+
+.text-input {
+  min-height: 200px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .url-input:focus,
-.name-input:focus {
+.name-input:focus,
+.text-input:focus {
   outline: none;
   border-color: var(--red-orange);
   background: #fff4e6;
 }
 
 .url-input:disabled,
-.name-input:disabled {
+.name-input:disabled,
+.text-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

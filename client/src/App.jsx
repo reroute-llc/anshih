@@ -13,6 +13,7 @@ function App() {
     gifs: [],
     images: []
   })
+  const [textItems, setTextItems] = useState([])
   const [showUpload, setShowUpload] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -79,14 +80,23 @@ function App() {
 
   const handleRename = async (type, id, newName) => {
     try {
-      const { error } = await supabase
-        .from('media_items')
-        .update({ name: newName })
-        .eq('id', id)
-        .eq('type', type)
+      if (type === 'text') {
+        const { error } = await supabase
+          .from('text_items')
+          .update({ name: newName })
+          .eq('id', id)
 
-      if (error) throw error
-      // Media will be updated via Realtime subscription
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('media_items')
+          .update({ name: newName })
+          .eq('id', id)
+          .eq('type', type)
+
+        if (error) throw error
+      }
+      // Items will be updated via Realtime subscription
     } catch (error) {
       console.error('Rename error:', error)
       throw error
@@ -95,7 +105,15 @@ function App() {
 
   const handleReorder = async (type, sourceIndex, targetIndex) => {
     try {
-      const items = media[type]
+      let items, tableName
+      
+      if (type === 'text') {
+        items = textItems
+        tableName = 'text_items'
+      } else {
+        items = media[type]
+        tableName = 'media_items'
+      }
       
       // Clamp indices to valid range
       const clampedSource = Math.max(0, Math.min(sourceIndex, items.length - 1))
@@ -107,19 +125,22 @@ function App() {
       }
       
       // Optimistically update local state immediately for responsive UI
-      setMedia(prevMedia => {
-        const updated = { ...prevMedia }
-        const typeArray = [...updated[type]]
-        
-        // Use arrayMove logic to reorder
-        const newArray = arrayMove(typeArray, clampedSource, clampedTarget)
-        updated[type] = newArray
-        
-        return updated
-      })
+      if (type === 'text') {
+        setTextItems(prevItems => {
+          const newArray = arrayMove([...prevItems], clampedSource, clampedTarget)
+          return newArray
+        })
+      } else {
+        setMedia(prevMedia => {
+          const updated = { ...prevMedia }
+          const typeArray = [...updated[type]]
+          const newArray = arrayMove(typeArray, clampedSource, clampedTarget)
+          updated[type] = newArray
+          return updated
+        })
+      }
       
       // Now update display_order values in the database
-      // We need to update all items that changed position
       const reorderedItems = arrayMove([...items], clampedSource, clampedTarget)
       
       // Batch update all items with their new display_order
@@ -131,7 +152,7 @@ function App() {
       // Update all items in parallel
       const updatePromises = updates.map(update => 
         supabase
-          .from('media_items')
+          .from(tableName)
           .update({ display_order: update.display_order })
           .eq('id', update.id)
       )
@@ -143,30 +164,54 @@ function App() {
       if (errors.length > 0) {
         console.error('Some reorder updates failed:', errors)
         // Revert optimistic update by refetching
-        const { data, error } = await supabase
-          .from('media_items')
-          .select('*')
-          .order('display_order', { ascending: true })
-        
-        if (!error && data) {
-          const transformed = transformMediaData(data)
-          setMedia(transformed)
+        if (type === 'text') {
+          const { data, error } = await supabase
+            .from('text_items')
+            .select('*')
+            .order('display_order', { ascending: true })
+          
+          if (!error && data) {
+            const transformed = transformTextData(data)
+            setTextItems(transformed)
+          }
+        } else {
+          const { data, error } = await supabase
+            .from('media_items')
+            .select('*')
+            .order('display_order', { ascending: true })
+          
+          if (!error && data) {
+            const transformed = transformMediaData(data)
+            setMedia(transformed)
+          }
         }
         throw new Error('Failed to update some items')
       }
       
-      // Media will also be updated via Realtime subscription as a backup
+      // Items will also be updated via Realtime subscription as a backup
     } catch (error) {
       console.error('Reorder error:', error)
       // Revert optimistic update by refetching
-      const { data, error: fetchError } = await supabase
-        .from('media_items')
-        .select('*')
-        .order('display_order', { ascending: true })
-      
-      if (!fetchError && data) {
-        const transformed = transformMediaData(data)
-        setMedia(transformed)
+      if (type === 'text') {
+        const { data, error: fetchError } = await supabase
+          .from('text_items')
+          .select('*')
+          .order('display_order', { ascending: true })
+        
+        if (!fetchError && data) {
+          const transformed = transformTextData(data)
+          setTextItems(transformed)
+        }
+      } else {
+        const { data, error: fetchError } = await supabase
+          .from('media_items')
+          .select('*')
+          .order('display_order', { ascending: true })
+        
+        if (!fetchError && data) {
+          const transformed = transformMediaData(data)
+          setMedia(transformed)
+        }
       }
       throw error
     }
@@ -174,33 +219,43 @@ function App() {
 
   const handleDelete = async (type, id) => {
     try {
-      // First get the item to delete the file from storage
-      const { data: item } = await supabase
-        .from('media_items')
-        .select('storage_path, storage_bucket')
-        .eq('id', id)
-        .single()
+      if (type === 'text') {
+        // Delete text item from database
+        const { error } = await supabase
+          .from('text_items')
+          .delete()
+          .eq('id', id)
 
-      if (item) {
-        // Delete from storage
-        const { error: storageError } = await supabase.storage
-          .from(item.storage_bucket || 'media')
-          .remove([item.storage_path])
+        if (error) throw error
+      } else {
+        // First get the item to delete the file from storage
+        const { data: item } = await supabase
+          .from('media_items')
+          .select('storage_path, storage_bucket')
+          .eq('id', id)
+          .single()
 
-        if (storageError) {
-          console.warn('Storage delete error:', storageError)
-          // Continue with database delete even if storage delete fails
+        if (item) {
+          // Delete from storage
+          const { error: storageError } = await supabase.storage
+            .from(item.storage_bucket || 'media')
+            .remove([item.storage_path])
+
+          if (storageError) {
+            console.warn('Storage delete error:', storageError)
+            // Continue with database delete even if storage delete fails
+          }
         }
+
+        // Delete from database
+        const { error } = await supabase
+          .from('media_items')
+          .delete()
+          .eq('id', id)
+
+        if (error) throw error
       }
-
-      // Delete from database
-      const { error } = await supabase
-        .from('media_items')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-      // Media will be updated via Realtime subscription
+      // Items will be updated via Realtime subscription
     } catch (error) {
       console.error('Delete error:', error)
       throw error
@@ -243,30 +298,55 @@ function App() {
     return result
   }
 
+  // Transform text items data
+  const transformTextData = (items) => {
+    return items.map(item => ({
+      id: item.id,
+      name: item.name,
+      content: item.content,
+      display_order: item.display_order ?? 0,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    })).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+  }
+
   useEffect(() => {
-    // Fetch initial media
-    const fetchMedia = async () => {
+    // Fetch initial media and text items
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch media items
+        const { data: mediaData, error: mediaError } = await supabase
           .from('media_items')
           .select('*')
           .order('display_order', { ascending: true })
 
-        if (error) throw error
+        if (mediaError) throw mediaError
 
-        const transformed = transformMediaData(data || [])
+        const transformed = transformMediaData(mediaData || [])
         setMedia(transformed)
+
+        // Fetch text items
+        const { data: textData, error: textError } = await supabase
+          .from('text_items')
+          .select('*')
+          .order('display_order', { ascending: true })
+
+        if (textError) throw textError
+
+        const transformedText = transformTextData(textData || [])
+        setTextItems(transformedText)
+
         setLoading(false)
       } catch (err) {
-        console.error('Error fetching media:', err)
+        console.error('Error fetching data:', err)
         setLoading(false)
       }
     }
 
-    fetchMedia()
+    fetchData()
 
-    // Listen for real-time updates
-    const channel = supabase
+    // Listen for real-time updates for media items
+    const mediaChannel = supabase
       .channel('media-changes')
       .on(
         'postgres_changes',
@@ -349,24 +429,111 @@ function App() {
         }
       )
       .subscribe((status, err) => {
-        console.log('Realtime subscription status:', status)
+        console.log('Media realtime subscription status:', status)
         if (err) {
-          console.error('Realtime subscription error:', err)
+          console.error('Media realtime subscription error:', err)
         }
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to realtime updates')
+          console.log('✅ Successfully subscribed to media realtime updates')
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Realtime channel error - check Supabase Realtime settings')
+          console.error('❌ Media realtime channel error - check Supabase Realtime settings')
         } else if (status === 'TIMED_OUT') {
-          console.error('❌ Realtime subscription timed out')
+          console.error('❌ Media realtime subscription timed out')
         } else if (status === 'CLOSED') {
-          console.warn('⚠️ Realtime channel closed')
+          console.warn('⚠️ Media realtime channel closed')
+        }
+      })
+
+    // Listen for real-time updates for text items
+    const textChannel = supabase
+      .channel('text-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'text_items'
+        },
+        async (payload) => {
+          console.log('Text realtime update received:', payload.eventType, payload)
+          
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const oldDisplayOrder = payload.old?.display_order
+            const newDisplayOrder = payload.new.display_order
+            
+            // If display_order changed, refetch to get correct order
+            if (oldDisplayOrder !== newDisplayOrder) {
+              const { data, error } = await supabase
+                .from('text_items')
+                .select('*')
+                .order('display_order', { ascending: true })
+
+              if (!error && data) {
+                const transformed = transformTextData(data)
+                setTextItems(transformed)
+                console.log('Text items reordered via realtime')
+              } else if (error) {
+                console.error('Error refetching text after reorder:', error)
+              }
+            } else {
+              // Only name or content changed, update in place
+              setTextItems(prevItems => {
+                const itemIndex = prevItems.findIndex(item => item.id === payload.new.id)
+                
+                if (itemIndex !== -1) {
+                  const updatedItem = {
+                    ...prevItems[itemIndex],
+                    name: payload.new.name,
+                    content: payload.new.content,
+                    display_order: payload.new.display_order,
+                    updated_at: payload.new.updated_at
+                  }
+                  
+                  const newArray = [...prevItems]
+                  newArray[itemIndex] = updatedItem
+                  return newArray
+                }
+                
+                return prevItems
+              })
+            }
+          } else {
+            // For INSERT/DELETE, refetch to maintain correct order
+            const { data, error } = await supabase
+              .from('text_items')
+              .select('*')
+              .order('display_order', { ascending: true })
+
+            if (!error && data) {
+              const transformed = transformTextData(data)
+              setTextItems(transformed)
+              console.log('Text items updated via realtime')
+            } else if (error) {
+              console.error('Error refetching text after realtime update:', error)
+            }
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        console.log('Text realtime subscription status:', status)
+        if (err) {
+          console.error('Text realtime subscription error:', err)
+        }
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to text realtime updates')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Text realtime channel error - check Supabase Realtime settings')
+        } else if (status === 'TIMED_OUT') {
+          console.error('❌ Text realtime subscription timed out')
+        } else if (status === 'CLOSED') {
+          console.warn('⚠️ Text realtime channel closed')
         }
       })
 
     return () => {
-      console.log('Cleaning up realtime subscription')
-      supabase.removeChannel(channel)
+      console.log('Cleaning up realtime subscriptions')
+      supabase.removeChannel(mediaChannel)
+      supabase.removeChannel(textChannel)
     }
   }, [])
 
@@ -430,7 +597,8 @@ function App() {
         onSearchChange={setSearchQuery}
       />
       <MediaHub 
-        media={media} 
+        media={media}
+        textItems={textItems}
         onMediaClick={handleMediaClick}
         onRename={handleRename}
         onReorder={handleReorder}

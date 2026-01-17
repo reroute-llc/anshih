@@ -1,0 +1,164 @@
+.text-item {
+  background: var(--light-orange);
+  border: 3px solid var(--orange);
+  padding: 15px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.text-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 170, 0, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.text-item:hover {
+  border-color: var(--red-orange);
+  transform: translateY(-5px);
+  background: #fff4e6;
+}
+
+.text-item:hover::before {
+  left: 100%;
+}
+
+.text-preview {
+  width: 100%;
+  background: var(--light-bg);
+  border: 2px solid var(--orange);
+  padding: 15px;
+  margin-bottom: 15px;
+  min-height: 60px;
+  position: relative;
+}
+
+.text-content {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  color: var(--text-dark);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.text-expand-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 8px;
+  padding: 8px 12px;
+  border: 2px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.text-expand-btn:hover {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.text-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.text-name {
+  font-size: 10px;
+  color: var(--text-dark);
+  word-break: break-word;
+  line-height: 1.4;
+  min-height: 28px;
+  cursor: pointer;
+  padding: 4px;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.text-name:hover {
+  border-color: var(--orange);
+  background: var(--light-orange);
+}
+
+.text-name-input {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  color: var(--text-dark);
+  background: var(--light-bg);
+  border: 2px solid var(--orange);
+  padding: 4px 8px;
+  width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
+  line-height: 1.4;
+  min-height: 28px;
+}
+
+.text-name-input:focus {
+  outline: none;
+  border-color: var(--red-orange);
+  background: #fff4e6;
+}
+
+.text-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.text-action-btn {
+  flex: 1;
+  font-size: 8px;
+  padding: 10px;
+  border: 2px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+}
+
+.text-action-btn:hover {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+@media (max-width: 768px) {
+  .text-item {
+    padding: 12px;
+  }
+  
+  .text-preview {
+    padding: 12px;
+    min-height: 50px;
+  }
+  
+  .text-content {
+    font-size: 9px;
+  }
+  
+  .text-name {
+    font-size: 8px;
+    min-height: 24px;
+  }
+  
+  .text-name-input {
+    font-size: 8px;
+    min-height: 24px;
+    padding: 3px 6px;
+  }
+  
+  .text-expand-btn {
+    font-size: 7px;
+    padding: 6px 10px;
+  }
+}

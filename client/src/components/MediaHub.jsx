@@ -1,7 +1,8 @@
 import MediaSection from './MediaSection'
+import TextSection from './TextSection'
 import './MediaHub.css'
 
-function MediaHub({ media, onMediaClick, onRename, onReorder, onDelete, searchQuery }) {
+function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelete, searchQuery }) {
   const filterItems = (items) => {
     if (!searchQuery || searchQuery.trim() === '') {
       return items
@@ -12,8 +13,26 @@ function MediaHub({ media, onMediaClick, onRename, onReorder, onDelete, searchQu
     )
   }
 
+  const filterTextItems = (items) => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return items
+    }
+    const query = searchQuery.toLowerCase().trim()
+    return items.filter(item => 
+      item.name.toLowerCase().includes(query) ||
+      item.content.toLowerCase().includes(query)
+    )
+  }
+
   return (
     <div className="media-hub">
+      <TextSection 
+        items={filterTextItems(textItems)}
+        title="TEXT"
+        onRename={onRename}
+        onReorder={onReorder}
+        onDelete={onDelete}
+      />
       <MediaSection 
         type="gifs" 
         items={filterItems(media.gifs)}

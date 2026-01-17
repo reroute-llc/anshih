@@ -1,0 +1,269 @@
+.text-section {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reuse MediaSection styles for section header */
+.text-section .section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+  padding: 15px 20px;
+  background: var(--light-orange);
+  border: 3px solid var(--orange);
+  border-left: 8px solid var(--orange);
+  width: 100%;
+}
+
+.text-section .section-label {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  position: relative;
+}
+
+.text-section .section-label-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.text-section .section-title {
+  font-size: 24px;
+  color: var(--orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  flex: 1;
+}
+
+.text-section .section-toggle-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 2px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  min-width: 40px;
+  height: 40px;
+}
+
+.text-section .section-toggle-btn:hover {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.text-section .section-toggle-btn i {
+  font-size: 16px;
+  line-height: 1;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.text-section .section-toggle-btn.collapsed i {
+  transform: rotate(180deg);
+}
+
+.text-section .section-count {
+  font-size: 12px;
+  color: var(--red-orange);
+  padding: 5px 12px;
+  background: var(--light-bg);
+  border: 2px solid var(--orange);
+  margin-top: 0;
+}
+
+.text-section .empty-message {
+  text-align: center;
+  padding: 40px;
+  border: 3px dashed var(--orange);
+  background: var(--light-orange);
+  border-radius: 0;
+  margin-top: 0;
+}
+
+.text-section .empty-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: float 2s ease-in-out infinite;
+}
+
+.text-section .empty-text {
+  font-size: 16px;
+  color: var(--orange);
+  margin-bottom: 10px;
+}
+
+.text-section .empty-hint {
+  font-size: 10px;
+  color: var(--red-orange);
+  opacity: 0.7;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.text-section .delete-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  margin-bottom: 20px;
+  border: 3px dashed var(--orange);
+  background: var(--light-orange);
+  opacity: 0.5;
+  transition: all 0.3s;
+  min-height: 100px;
+}
+
+.text-section .delete-dropzone.drag-over {
+  opacity: 1;
+  background: var(--red-orange);
+  border-color: var(--red-orange);
+  border-style: solid;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 100, 50, 0.5);
+}
+
+.text-section .delete-dropzone-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.text-section .delete-dropzone.drag-over .delete-dropzone-icon {
+  animation: shake 0.3s ease-in-out infinite;
+}
+
+.text-section .delete-dropzone-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.text-section .delete-dropzone.drag-over .delete-dropzone-text {
+  color: var(--light-bg);
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+.text-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.text-section .drag-item {
+  cursor: grab;
+  transition: transform 0.2s;
+  position: relative;
+  touch-action: pan-y pan-x;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.text-section .drag-item.dragging {
+  touch-action: none;
+  cursor: grabbing;
+  z-index: 1000;
+}
+
+.text-section .drag-item:active {
+  cursor: grabbing;
+}
+
+@media (max-width: 768px) {
+  .text-section .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 15px;
+  }
+  
+  .text-section .section-label-icon {
+    font-size: 24px;
+  }
+  
+  .text-section .section-title {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  
+  .text-section .section-count {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  
+  .text-section .section-toggle-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 6px 10px;
+  }
+  
+  .text-section .section-toggle-btn i {
+    font-size: 14px;
+  }
+  
+  .text-section .delete-dropzone {
+    padding: 20px;
+    min-height: 80px;
+  }
+  
+  .text-section .delete-dropzone-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  
+  .text-section .delete-dropzone-text {
+    font-size: 10px;
+  }
+  
+  .text-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-grid {
+    gap: 10px;
+  }
+}

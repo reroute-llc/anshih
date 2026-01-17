@@ -5,9 +5,10 @@ import './UploadPanel.css'
 
 function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
   const [selectedFile, setSelectedFile] = useState(null)
-  const [uploadMethod, setUploadMethod] = useState('file') // 'file' or 'url'
+  const [uploadMethod, setUploadMethod] = useState('file') // 'file', 'url', or 'text'
   const [urlInput, setUrlInput] = useState('')
   const [customName, setCustomName] = useState('')
+  const [textContent, setTextContent] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -50,12 +51,33 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
   const handleUpload = async () => {
     if (uploadMethod === 'file' && !selectedFile) return
     if (uploadMethod === 'url' && !urlInput.trim()) return
+    if (uploadMethod === 'text' && !textContent.trim()) return
 
     setUploading(true)
     setUploadProgress(0)
 
     try {
-      if (uploadMethod === 'file') {
+      if (uploadMethod === 'text') {
+        // Create text item
+        const itemName = customName.trim() || 'Untitled Text'
+        const { error: dbError } = await supabase
+          .from('text_items')
+          .insert({
+            name: itemName,
+            content: textContent.trim()
+          })
+
+        if (dbError) throw dbError
+
+        setUploadProgress(100)
+        setTimeout(() => {
+          onUploadSuccess()
+          setTextContent('')
+          setCustomName('')
+          setUploadProgress(0)
+          setUploading(false)
+        }, 500)
+      } else if (uploadMethod === 'file') {
         const file = selectedFile
         const type = detectMediaType(file.type)
         
@@ -144,7 +166,7 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
     <div className="upload-overlay" onClick={onClose}>
       <div className="upload-panel" onClick={(e) => e.stopPropagation()}>
         <div className="upload-header">
-          <h2 className="upload-title">UPLOAD MEDIA</h2>
+          <h2 className="upload-title">{uploadMethod === 'text' ? 'CREATE TEXT' : 'UPLOAD MEDIA'}</h2>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -157,6 +179,7 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
                 onClick={() => {
                   setUploadMethod('file')
                   setUrlInput('')
+                  setTextContent('')
                 }}
                 disabled={uploading}
               >
@@ -167,10 +190,22 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
                 onClick={() => {
                   setUploadMethod('url')
                   setSelectedFile(null)
+                  setTextContent('')
                 }}
                 disabled={uploading}
               >
                 🔗 URL
+              </button>
+              <button
+                className={`method-btn ${uploadMethod === 'text' ? 'active' : ''}`}
+                onClick={() => {
+                  setUploadMethod('text')
+                  setSelectedFile(null)
+                  setUrlInput('')
+                }}
+                disabled={uploading}
+              >
+                📝 TEXT
               </button>
             </div>
           </div>
@@ -202,7 +237,7 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
                 </div>
               </label>
             </div>
-          ) : (
+          ) : uploadMethod === 'url' ? (
             <div className="url-selector">
               <label className="type-label">ENTER URL:</label>
               <input
@@ -212,6 +247,18 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 disabled={uploading}
+              />
+            </div>
+          ) : (
+            <div className="text-selector">
+              <label className="type-label">ENTER TEXT:</label>
+              <textarea
+                className="text-input"
+                placeholder="Paste or type your text here..."
+                value={textContent}
+                onChange={(e) => setTextContent(e.target.value)}
+                disabled={uploading}
+                rows={10}
               />
             </div>
           )}
@@ -243,9 +290,9 @@ function UploadPanel({ onClose, onUploadSuccess, droppedFile }) {
           <button
             className="upload-submit-btn"
             onClick={handleUpload}
-            disabled={(uploadMethod === 'file' && !selectedFile) || (uploadMethod === 'url' && !urlInput.trim()) || uploading}
+            disabled={(uploadMethod === 'file' && !selectedFile) || (uploadMethod === 'url' && !urlInput.trim()) || (uploadMethod === 'text' && !textContent.trim()) || uploading}
           >
-            {uploading ? 'UPLOADING...' : 'UPLOAD'}
+            {uploading ? 'UPLOADING...' : uploadMethod === 'text' ? 'CREATE' : 'UPLOAD'}
           </button>
         </div>
       </div>
