@@ -1,7 +1,7 @@
 # TODO
 
 - [x] Copying and saving media on mobile
-- [ ] Rearranging items reliably
+- [x] Rearranging items reliably
 - [ ] Clipboard collection
 - [ ] Proper filtering
 - [ ] Key bind shortcuts
