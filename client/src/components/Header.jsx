@@ -16,21 +16,22 @@ function Header({ onUploadClick, onFilterClick, searchQuery, onSearchChange, act
               onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
-          <button 
-            className={`filter-btn ${activeFiltersCount > 0 ? 'active' : ''}`}
-            onClick={onFilterClick}
-            title="Filter items"
-          >
-            FILTER
-            {activeFiltersCount > 0 && (
-              <span className="filter-badge">{activeFiltersCount}</span>
-            )}
-          </button>
           <button className="upload-btn" onClick={onUploadClick}>
             UPLOAD
           </button>
         </div>
       </div>
+      <button 
+        className={`filter-icon-btn ${activeFiltersCount > 0 ? 'active' : ''}`}
+        onClick={onFilterClick}
+        title="Filter items"
+        aria-label="Filter items"
+      >
+        <span className="filter-icon"></span>
+        {activeFiltersCount > 0 && (
+          <span className="filter-badge">{activeFiltersCount}</span>
+        )}
+      </button>
       <div className="scanline"></div>
     </header>
   )

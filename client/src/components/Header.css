@@ -3,7 +3,7 @@
   border-bottom: 4px solid var(--orange);
   padding: 20px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .header-content {
@@ -64,14 +64,66 @@
   opacity: 0.6;
 }
 
-.filter-btn {
-  flex-shrink: 0;
+.filter-icon-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  padding: 0;
+  border: 3px solid var(--orange);
+  background: var(--light-orange);
+  color: var(--orange);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
   position: relative;
 }
 
-.filter-btn.active {
+.filter-icon-btn:hover {
   background: var(--orange);
   color: var(--light-bg);
+  transform: translateY(-2px);
+}
+
+.filter-icon-btn.active {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.filter-icon {
+  width: 18px;
+  height: 18px;
+  position: relative;
+  display: block;
+}
+
+.filter-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid currentColor;
+}
+
+.filter-icon::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 0 0 2px 2px;
 }
 
 .filter-badge {
@@ -86,6 +138,7 @@
   min-width: 18px;
   text-align: center;
   line-height: 1.4;
+  font-family: 'Press Start 2P', cursive;
 }
 
 .upload-btn {
@@ -151,5 +204,28 @@
   
   .upload-btn {
     width: 100%;
+  }
+  
+  .filter-icon-btn {
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .filter-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .filter-icon::before {
+    border-left-width: 5px;
+    border-right-width: 5px;
+    border-top-width: 7px;
+  }
+  
+  .filter-icon::after {
+    width: 7px;
+    height: 3px;
   }
 }

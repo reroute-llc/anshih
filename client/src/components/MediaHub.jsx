@@ -3,21 +3,40 @@ import TextSection from './TextSection'
 import './MediaHub.css'
 
 function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelete, searchQuery, activeFilters = [] }) {
-  // Check if item matches any active filter
-  const matchesFilter = (item) => {
-    if (activeFilters.length === 0) return true
+  // Collection type filters
+  const COLLECTION_TYPES = ['text', 'gifs', 'images', 'soundbites']
+  
+  // Separate collection filters from content filters
+  const collectionFilters = activeFilters.filter(f => COLLECTION_TYPES.includes(f))
+  const contentFilters = activeFilters.filter(f => !COLLECTION_TYPES.includes(f))
+  
+  // Check if item matches any content filter (name/content matching)
+  const matchesContentFilter = (item) => {
+    if (contentFilters.length === 0) return true
     
     const itemName = item.name.toLowerCase()
     const itemContent = item.content ? item.content.toLowerCase() : ''
     
-    return activeFilters.some(filter => {
+    return contentFilters.some(filter => {
       const filterLower = filter.toLowerCase()
       return itemName.includes(filterLower) || itemContent.includes(filterLower)
     })
   }
 
-  const filterItems = (items) => {
+  const filterItems = (items, type) => {
     let filtered = items
+
+    // Apply collection type filter first
+    if (collectionFilters.length > 0) {
+      const typeMap = {
+        'gifs': 'gifs',
+        'images': 'images',
+        'soundbites': 'soundbites'
+      }
+      if (!collectionFilters.includes(typeMap[type])) {
+        return [] // Hide this collection if not in active collection filters
+      }
+    }
 
     // Apply search query filter
     if (searchQuery && searchQuery.trim() !== '') {
@@ -27,9 +46,9 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       )
     }
 
-    // Apply active filters
-    if (activeFilters.length > 0) {
-      filtered = filtered.filter(matchesFilter)
+    // Apply content filters
+    if (contentFilters.length > 0) {
+      filtered = filtered.filter(matchesContentFilter)
     }
 
     return filtered
@@ -37,6 +56,13 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
 
   const filterTextItems = (items) => {
     let filtered = items
+
+    // Apply collection type filter first
+    if (collectionFilters.length > 0) {
+      if (!collectionFilters.includes('text')) {
+        return [] // Hide text collection if not in active collection filters
+      }
+    }
 
     // Apply search query filter
     if (searchQuery && searchQuery.trim() !== '') {
@@ -47,9 +73,9 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       )
     }
 
-    // Apply active filters
-    if (activeFilters.length > 0) {
-      filtered = filtered.filter(matchesFilter)
+    // Apply content filters
+    if (contentFilters.length > 0) {
+      filtered = filtered.filter(matchesContentFilter)
     }
 
     return filtered
@@ -66,7 +92,7 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       />
       <MediaSection 
         type="gifs" 
-        items={filterItems(media.gifs)}
+        items={filterItems(media.gifs, 'gifs')}
         title="GIFS"
         onMediaClick={onMediaClick}
         onRename={onRename}
@@ -75,7 +101,7 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       />
       <MediaSection 
         type="images" 
-        items={filterItems(media.images)}
+        items={filterItems(media.images, 'images')}
         title="IMAGES"
         onMediaClick={onMediaClick}
         onRename={onRename}
@@ -84,7 +110,7 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       />
       <MediaSection 
         type="soundbites" 
-        items={filterItems(media.soundbites)}
+        items={filterItems(media.soundbites, 'soundbites')}
         title="SOUNDBITES"
         onMediaClick={onMediaClick}
         onRename={onRename}
