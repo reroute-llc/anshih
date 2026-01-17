@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
 import { supabase } from './lib/supabase'
 import Header from './components/Header'
 import MediaHub from './components/MediaHub'
@@ -95,30 +96,78 @@ function App() {
   const handleReorder = async (type, sourceIndex, targetIndex) => {
     try {
       const items = media[type]
-      const sourceItem = items[sourceIndex]
-      const targetItem = items[targetIndex]
       
-      // Swap display_order values
-      const sourceOrder = sourceItem.display_order ?? sourceIndex
-      const targetOrder = targetItem.display_order ?? targetIndex
-
-      // Update both items
-      const { error: error1 } = await supabase
-        .from('media_items')
-        .update({ display_order: targetOrder })
-        .eq('id', sourceItem.id)
-
-      if (error1) throw error1
-
-      const { error: error2 } = await supabase
-        .from('media_items')
-        .update({ display_order: sourceOrder })
-        .eq('id', targetItem.id)
-
-      if (error2) throw error2
-      // Media will be updated via Realtime subscription
+      // Clamp indices to valid range
+      const clampedSource = Math.max(0, Math.min(sourceIndex, items.length - 1))
+      const clampedTarget = Math.max(0, Math.min(targetIndex, items.length))
+      
+      // If indices are the same or adjacent, no reorder needed
+      if (clampedSource === clampedTarget || Math.abs(clampedSource - clampedTarget) === 1) {
+        return
+      }
+      
+      // Optimistically update local state immediately for responsive UI
+      setMedia(prevMedia => {
+        const updated = { ...prevMedia }
+        const typeArray = [...updated[type]]
+        
+        // Use arrayMove logic to reorder
+        const newArray = arrayMove(typeArray, clampedSource, clampedTarget)
+        updated[type] = newArray
+        
+        return updated
+      })
+      
+      // Now update display_order values in the database
+      // We need to update all items that changed position
+      const reorderedItems = arrayMove([...items], clampedSource, clampedTarget)
+      
+      // Batch update all items with their new display_order
+      const updates = reorderedItems.map((item, index) => ({
+        id: item.id,
+        display_order: index
+      }))
+      
+      // Update all items in parallel
+      const updatePromises = updates.map(update => 
+        supabase
+          .from('media_items')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id)
+      )
+      
+      const results = await Promise.all(updatePromises)
+      
+      // Check for errors
+      const errors = results.filter(result => result.error)
+      if (errors.length > 0) {
+        console.error('Some reorder updates failed:', errors)
+        // Revert optimistic update by refetching
+        const { data, error } = await supabase
+          .from('media_items')
+          .select('*')
+          .order('display_order', { ascending: true })
+        
+        if (!error && data) {
+          const transformed = transformMediaData(data)
+          setMedia(transformed)
+        }
+        throw new Error('Failed to update some items')
+      }
+      
+      // Media will also be updated via Realtime subscription as a backup
     } catch (error) {
       console.error('Reorder error:', error)
+      // Revert optimistic update by refetching
+      const { data, error: fetchError } = await supabase
+        .from('media_items')
+        .select('*')
+        .order('display_order', { ascending: true })
+      
+      if (!fetchError && data) {
+        const transformed = transformMediaData(data)
+        setMedia(transformed)
+      }
       throw error
     }
   }
@@ -229,38 +278,59 @@ function App() {
         async (payload) => {
           console.log('Realtime update received:', payload.eventType, payload)
           
-          // For UPDATE events, we can optimize by updating the specific item
-          // For INSERT/DELETE, we need to refetch to maintain order
+          // For UPDATE events, check if display_order changed (reorder)
+          // If display_order changed, we need to re-sort the array
           if (payload.eventType === 'UPDATE' && payload.new) {
-            setMedia(prevMedia => {
-              const updated = { ...prevMedia }
-              const itemType = payload.new.type
-              const itemId = payload.new.id
-              
-              // Find and update the item in the correct type array
-              const typeArray = updated[itemType] || []
-              const itemIndex = typeArray.findIndex(item => item.id === itemId)
-              
-              if (itemIndex !== -1) {
-                // Update the existing item
-                const updatedItem = {
-                  ...typeArray[itemIndex],
-                  name: payload.new.name,
-                  display_order: payload.new.display_order,
-                  updated_at: payload.new.updated_at
+            const oldDisplayOrder = payload.old?.display_order
+            const newDisplayOrder = payload.new.display_order
+            
+            // If display_order changed, refetch to get correct order
+            // (Multiple items may have been updated)
+            if (oldDisplayOrder !== newDisplayOrder) {
+              const { data, error } = await supabase
+                .from('media_items')
+                .select('*')
+                .order('display_order', { ascending: true })
+
+              if (!error && data) {
+                const transformed = transformMediaData(data)
+                setMedia(transformed)
+                console.log('Media reordered via realtime')
+              } else if (error) {
+                console.error('Error refetching after reorder:', error)
+              }
+            } else {
+              // Only name or other non-order fields changed, update in place
+              setMedia(prevMedia => {
+                const updated = { ...prevMedia }
+                const itemType = payload.new.type
+                const itemId = payload.new.id
+                
+                // Find and update the item in the correct type array
+                const typeArray = updated[itemType] || []
+                const itemIndex = typeArray.findIndex(item => item.id === itemId)
+                
+                if (itemIndex !== -1) {
+                  // Update the existing item
+                  const updatedItem = {
+                    ...typeArray[itemIndex],
+                    name: payload.new.name,
+                    display_order: payload.new.display_order,
+                    updated_at: payload.new.updated_at
+                  }
+                  
+                  // Reconstruct the array with the updated item
+                  const newArray = [...typeArray]
+                  newArray[itemIndex] = updatedItem
+                  updated[itemType] = newArray
+                  
+                  return updated
                 }
                 
-                // Reconstruct the array with the updated item
-                const newArray = [...typeArray]
-                newArray[itemIndex] = updatedItem
-                updated[itemType] = newArray
-                
-                return updated
-              }
-              
-              // If item not found, fall back to refetch
-              return prevMedia
-            })
+                // If item not found, fall back to refetch
+                return prevMedia
+              })
+            }
           } else {
             // For INSERT/DELETE, refetch to maintain correct order
             const { data, error } = await supabase

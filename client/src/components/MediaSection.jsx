@@ -286,7 +286,7 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
       targetIndex = Math.max(0, Math.min(targetIndex, items.length))
 
       // Only reorder if the position actually changes
-      if (onReorder && targetIndex !== oldIndex && targetIndex !== oldIndex + 1) {
+      if (onReorder && targetIndex !== oldIndex) {
         await onReorder(type, oldIndex, targetIndex)
       }
     }
