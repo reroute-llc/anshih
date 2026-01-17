@@ -162,13 +162,17 @@
   cursor: grab;
   transition: transform 0.2s;
   position: relative;
-  /* Don't restrict touch-action - let the delay handle scroll vs drag */
-  /* The 250ms delay allows scrolling to work naturally */
+  /* Allow both panning (scrolling) and manipulation (drag) */
+  touch-action: pan-y pan-x;
+  /* Ensure the element can receive pointer events */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Only restrict touch-action when actually dragging */
 .drag-item.dragging {
   touch-action: none;
+  cursor: grabbing;
+  z-index: 1000;
 }
 
 .drag-item:active {
@@ -204,6 +208,8 @@
   user-select: none;
   pointer-events: auto;
   -webkit-touch-callout: none;
+  /* Allow touch events to bubble up for drag */
+  touch-action: inherit;
 }
 
 /* Ensure media-preview allows drag */

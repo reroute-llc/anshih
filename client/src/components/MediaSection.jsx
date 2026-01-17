@@ -38,22 +38,36 @@ function SortableItem({ id, index, type, item, onMediaClick, onRename, overId, d
 
   const isOver = overId === item.id
 
-  // Prevent drag when clicking on interactive elements
+  // Create a custom handler that prevents drag on interactive elements
   const handlePointerDown = (e) => {
     // Don't start drag if clicking on interactive elements
-    if (e.target.closest('.media-name') || 
-        e.target.closest('.media-name-input') ||
-        e.target.closest('button') ||
-        e.target.closest('input') ||
-        e.target.closest('img')) {
+    const target = e.target
+    if (target.closest('.media-name') || 
+        target.closest('.media-name-input') ||
+        target.closest('button') ||
+        target.closest('input')) {
       e.stopPropagation()
-      return
+      e.preventDefault()
+      return false
     }
     // Allow drag to proceed
-    if (listeners?.onPointerDown) {
-      listeners.onPointerDown(e)
-    }
+    return true
   }
+
+  // Create merged listeners that respect interactive elements
+  const dragListeners = listeners ? {
+    ...listeners,
+    onPointerDown: (e) => {
+      if (handlePointerDown(e) && listeners.onPointerDown) {
+        listeners.onPointerDown(e)
+      }
+    },
+    onTouchStart: (e) => {
+      if (handlePointerDown(e) && listeners.onTouchStart) {
+        listeners.onTouchStart(e)
+      }
+    },
+  } : {}
 
   return (
     <div
@@ -62,8 +76,7 @@ function SortableItem({ id, index, type, item, onMediaClick, onRename, overId, d
       data-id={item.id}
       className={`drag-item ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isOver && dropSide ? `drop-${dropSide}` : ''}`}
       {...attributes}
-      onPointerDown={handlePointerDown}
-      onMouseDown={listeners?.onMouseDown}
+      {...dragListeners}
     >
       <MediaItem
         type={type}
@@ -101,12 +114,19 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const mouseMoveHandlerRef = useRef(null)
 
+  // Detect if we're on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window) || 
+                   (navigator.maxTouchPoints > 0)
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 300, // 300ms delay - during this time, scrolling works normally
-        tolerance: 5, // Allow 5px movement during delay (allows scrolling)
-        distance: 0, // No distance requirement - delay is the main constraint
+        // On mobile: require a longer press to start drag (allows scrolling)
+        // On desktop: require a small movement to start drag (prevents accidental drags)
+        delay: isMobile ? 250 : 0,
+        tolerance: isMobile ? 8 : 5,
+        distance: isMobile ? 0 : 8, // On desktop, require 8px movement
       },
     }),
     useSensor(KeyboardSensor, {
@@ -135,13 +155,18 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
       })
     }
     
-    // Track mouse position during drag
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+    // Track pointer position during drag (works for both mouse and touch)
+    const handlePointerMove = (e) => {
+      const x = e.touches ? e.touches[0]?.clientX : e.clientX
+      const y = e.touches ? e.touches[0]?.clientY : e.clientY
+      if (x !== undefined && y !== undefined) {
+        setMousePosition({ x, y })
+      }
     }
     
-    mouseMoveHandlerRef.current = handleMouseMove
-    document.addEventListener('mousemove', handleMouseMove, { passive: true })
+    mouseMoveHandlerRef.current = handlePointerMove
+    document.addEventListener('mousemove', handlePointerMove, { passive: true })
+    document.addEventListener('touchmove', handlePointerMove, { passive: true })
   }
 
   const handleDragOver = (event) => {
@@ -168,34 +193,27 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
         const rect = overElement.getBoundingClientRect()
         const itemCenterX = rect.left + rect.width / 2
         
-        // Try multiple methods to get mouse position
-        let mouseX = mousePosition.x
+        // Get current pointer position - try multiple sources
+        let pointerX = mousePosition.x
         
-        // If mouse position not available, try to get from event
-        if (!mouseX || mouseX === 0) {
-          if (event.activatorEvent?.clientX) {
-            mouseX = event.activatorEvent.clientX
-          } else if (event.delta?.x !== undefined) {
-            // Estimate from delta
-            mouseX = itemCenterX + event.delta.x
-          } else {
-            mouseX = itemCenterX
+        // Try to get from touch events (mobile)
+        if ((!pointerX || pointerX === 0) && event.activatorEvent) {
+          if (event.activatorEvent.touches && event.activatorEvent.touches.length > 0) {
+            pointerX = event.activatorEvent.touches[0].clientX
+          } else if (event.activatorEvent.clientX) {
+            pointerX = event.activatorEvent.clientX
           }
         }
         
-        // Use a smaller threshold for more reliable detection
-        const threshold = rect.width * 0.2 // 20% threshold
-        let side
-        
-        if (mouseX < (itemCenterX - threshold)) {
-          side = 'left'
-        } else if (mouseX > (itemCenterX + threshold)) {
-          side = 'right'
-        } else {
-          // In the middle zone, use drag direction or default to right
-          const dragDirection = event.delta?.x || 0
-          side = dragDirection < -10 ? 'left' : 'right'
+        // Fallback: use center if we can't get pointer position
+        if (!pointerX || pointerX === 0) {
+          pointerX = itemCenterX
         }
+        
+        // Determine side based on pointer position relative to center
+        // Use a 30% threshold for more reliable detection
+        const threshold = rect.width * 0.3
+        const side = pointerX < itemCenterX ? 'left' : 'right'
         
         setDropSide(side)
       } else {
@@ -211,9 +229,10 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
   const handleDragEnd = async (event) => {
     const { active, over } = event
 
-    // Clean up mouse tracking
+    // Clean up pointer tracking
     if (mouseMoveHandlerRef.current) {
       document.removeEventListener('mousemove', mouseMoveHandlerRef.current)
+      document.removeEventListener('touchmove', mouseMoveHandlerRef.current)
       mouseMoveHandlerRef.current = null
     }
 
@@ -240,34 +259,34 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
       const oldIndex = items.findIndex(item => item.id === active.id)
       const newIndex = items.findIndex(item => item.id === over.id)
       
+      if (oldIndex === -1 || newIndex === -1) {
+        return
+      }
+      
       // Calculate target index based on drop side
-      // If dropping on the right, insert after the target item
-      // If dropping on the left, insert before the target item
+      // Simplified logic: if dropping on left, insert before; if right, insert after
       let targetIndex
       
-      if (dropSide === 'right') {
-        // Insert after the target
-        targetIndex = newIndex + 1
-        // Adjust if dragging from before the target (items shift)
-        if (oldIndex < newIndex) {
-          targetIndex = newIndex + 1
-        }
-      } else if (dropSide === 'left') {
+      if (dropSide === 'left') {
         // Insert before the target
         targetIndex = newIndex
-        // Adjust if dragging from after the target
-        if (oldIndex > newIndex) {
-          targetIndex = newIndex
-        }
+        // If dragging from after the target, no adjustment needed
+        // If dragging from before, items shift, so we stay at newIndex
+      } else if (dropSide === 'right') {
+        // Insert after the target
+        targetIndex = newIndex + 1
+        // If dragging from before the target, items shift, so we need newIndex + 1
+        // If dragging from after, we still want newIndex + 1
       } else {
-        // Fallback: use @dnd-kit's natural behavior (insert after)
-        targetIndex = oldIndex < newIndex ? newIndex : newIndex + 1
+        // Fallback: use simple arrayMove logic (insert after target)
+        targetIndex = oldIndex < newIndex ? newIndex + 1 : newIndex
       }
 
       // Ensure targetIndex is within bounds
       targetIndex = Math.max(0, Math.min(targetIndex, items.length))
 
-      if (onReorder && targetIndex !== oldIndex) {
+      // Only reorder if the position actually changes
+      if (onReorder && targetIndex !== oldIndex && targetIndex !== oldIndex + 1) {
         await onReorder(type, oldIndex, targetIndex)
       }
     }
@@ -326,7 +345,11 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
-          autoScroll={{ threshold: { x: 0.2, y: 0.2 } }}
+          autoScroll={{ 
+            threshold: { x: 0.2, y: 0.2 },
+            enabled: true,
+            interval: 50,
+          }}
         >
           <DeleteZone
             isActive={activeId !== null}
