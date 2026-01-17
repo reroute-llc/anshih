@@ -1,6 +1,6 @@
 import './Header.css'
 
-function Header({ onUploadClick, searchQuery, onSearchChange }) {
+function Header({ onUploadClick, onFilterClick, searchQuery, onSearchChange, activeFiltersCount }) {
   return (
     <header className="header">
       <div className="header-content">
@@ -16,6 +16,16 @@ function Header({ onUploadClick, searchQuery, onSearchChange }) {
               onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
+          <button 
+            className={`filter-btn ${activeFiltersCount > 0 ? 'active' : ''}`}
+            onClick={onFilterClick}
+            title="Filter items"
+          >
+            FILTER
+            {activeFiltersCount > 0 && (
+              <span className="filter-badge">{activeFiltersCount}</span>
+            )}
+          </button>
           <button className="upload-btn" onClick={onUploadClick}>
             UPLOAD
           </button>

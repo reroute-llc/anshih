@@ -5,6 +5,7 @@ import Header from './components/Header'
 import MediaHub from './components/MediaHub'
 import UploadPanel from './components/UploadPanel'
 import MediaViewer from './components/MediaViewer'
+import FilterPanel from './components/FilterPanel'
 import './App.css'
 
 function App() {
@@ -15,8 +16,10 @@ function App() {
   })
   const [textItems, setTextItems] = useState([])
   const [showUpload, setShowUpload] = useState(false)
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilters, setActiveFilters] = useState([])
   const [viewerState, setViewerState] = useState({
     isOpen: false,
     currentType: null,
@@ -593,8 +596,10 @@ function App() {
     >
       <Header 
         onUploadClick={() => setShowUpload(!showUpload)}
+        onFilterClick={() => setShowFilterPanel(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        activeFiltersCount={activeFilters.length}
       />
       <MediaHub 
         media={media}
@@ -604,6 +609,7 @@ function App() {
         onReorder={handleReorder}
         onDelete={handleDelete}
         searchQuery={searchQuery}
+        activeFilters={activeFilters}
       />
       {showUpload && (
         <UploadPanel 
@@ -626,6 +632,14 @@ function App() {
           onClose={handleCloseViewer}
           onNext={handleNext}
           onPrevious={handlePrevious}
+        />
+      )}
+      {showFilterPanel && (
+        <FilterPanel
+          isOpen={showFilterPanel}
+          onClose={() => setShowFilterPanel(false)}
+          activeFilters={activeFilters}
+          onFiltersChange={setActiveFilters}
         />
       )}
     </div>

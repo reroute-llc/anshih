@@ -3,7 +3,7 @@
 - [x] Copying and saving media on mobile
 - [x] Rearranging items reliably
 - [x] Text collection
-- [ ] Proper filtering
+- [x] Proper filtering
 - [ ] Key bind shortcuts
 - [ ] More compact and ergonomic design
 - [ ] Send to Instagram and Send to iMessage functionality

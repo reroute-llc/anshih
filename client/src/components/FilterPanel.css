@@ -1,0 +1,311 @@
+.filter-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.filter-panel {
+  background: var(--light-bg);
+  border: 4px solid var(--orange);
+  padding: 30px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid var(--orange);
+}
+
+.filter-panel-title {
+  font-size: 24px;
+  color: var(--orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.filter-close-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 2px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  min-width: 40px;
+  height: 40px;
+}
+
+.filter-close-btn:hover {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.filter-close-btn {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.filter-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filter-section-title {
+  font-size: 12px;
+  color: var(--red-orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.preset-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.preset-filter-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  padding: 12px 20px;
+  border: 3px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-filter-btn:hover {
+  background: var(--light-orange);
+  transform: translateY(-2px);
+}
+
+.preset-filter-btn.active {
+  background: var(--orange);
+  color: var(--light-bg);
+}
+
+.filter-check {
+  font-size: 12px;
+  color: var(--light-bg);
+}
+
+.custom-filter-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.custom-filter-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  padding: 12px 15px;
+  border: 3px solid var(--orange);
+  background: var(--light-bg);
+  color: var(--text-dark);
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.custom-filter-text:focus {
+  outline: none;
+  border-color: var(--red-orange);
+  background: #fff4e6;
+}
+
+.custom-filter-text::placeholder {
+  color: var(--orange);
+  opacity: 0.6;
+}
+
+.add-filter-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  padding: 12px 20px;
+  border: 3px solid var(--orange);
+  background: var(--orange);
+  color: var(--light-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.add-filter-btn:hover:not(:disabled) {
+  background: var(--red-orange);
+  border-color: var(--red-orange);
+  transform: translateY(-2px);
+}
+
+.add-filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.active-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--light-orange);
+  border: 2px solid var(--orange);
+  font-size: 9px;
+  color: var(--text-dark);
+}
+
+.active-filter-label {
+  font-family: 'Press Start 2P', cursive;
+  text-transform: capitalize;
+}
+
+.remove-filter-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  color: var(--red-orange);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.remove-filter-btn:hover {
+  color: var(--orange);
+  transform: scale(1.2);
+}
+
+.remove-filter-btn {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.clear-all-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  padding: 8px 15px;
+  border: 2px solid var(--red-orange);
+  background: transparent;
+  color: var(--red-orange);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-all-btn:hover {
+  background: var(--red-orange);
+  color: var(--light-bg);
+}
+
+@media (max-width: 768px) {
+  .filter-panel {
+    padding: 20px;
+    max-width: 95%;
+    max-height: 90vh;
+  }
+  
+  .filter-panel-title {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+  
+  .filter-close-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 6px 10px;
+  }
+  
+  .filter-close-btn {
+    font-size: 20px;
+  }
+  
+  .filter-section-title {
+    font-size: 10px;
+  }
+  
+  .preset-filter-btn {
+    font-size: 9px;
+    padding: 10px 16px;
+  }
+  
+  .custom-filter-text {
+    font-size: 9px;
+    padding: 10px 12px;
+  }
+  
+  .add-filter-btn {
+    font-size: 9px;
+    padding: 10px 16px;
+  }
+  
+  .active-filter-tag {
+    font-size: 8px;
+    padding: 6px 10px;
+  }
+  
+  .clear-all-btn {
+    font-size: 8px;
+    padding: 6px 12px;
+  }
+}
