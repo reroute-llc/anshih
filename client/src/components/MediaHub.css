@@ -9,6 +9,30 @@
   gap: 40px;
 }
 
+.sortable-collection {
+  cursor: grab;
+  transition: transform 0.2s;
+}
+
+.sortable-collection:active {
+  cursor: grabbing;
+}
+
+.sortable-collection.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* Prevent dragging when clicking on interactive elements inside sections */
+.sortable-collection .section-header,
+.sortable-collection button,
+.sortable-collection input,
+.sortable-collection .media-name,
+.sortable-collection .text-name,
+.sortable-collection .text-content {
+  pointer-events: auto;
+}
+
 @media (max-width: 768px) {
   .media-hub {
     padding: 15px;

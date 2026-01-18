@@ -20,6 +20,24 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState([])
+  
+  // Collection order state - load from localStorage or use default
+  const [collectionOrder, setCollectionOrder] = useState(() => {
+    const saved = localStorage.getItem('collectionOrder')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        return ['text', 'gifs', 'images', 'soundbites']
+      }
+    }
+    return ['text', 'gifs', 'images', 'soundbites']
+  })
+  
+  // Save collection order to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('collectionOrder', JSON.stringify(collectionOrder))
+  }, [collectionOrder])
   const [viewerState, setViewerState] = useState({
     isOpen: false,
     currentType: null,
@@ -610,6 +628,8 @@ function App() {
         onDelete={handleDelete}
         searchQuery={searchQuery}
         activeFilters={activeFilters}
+        collectionOrder={collectionOrder}
+        onCollectionReorder={setCollectionOrder}
       />
       {showUpload && (
         <UploadPanel 
