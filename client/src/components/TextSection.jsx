@@ -102,8 +102,9 @@ function DeleteZone({ isActive, activeId, items, onDelete }) {
   )
 }
 
-function TextSection({ items, title, onRename, onReorder, onDelete }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+function TextSection({ items, title, onRename, onReorder, onDelete, isCollapsed: externalIsCollapsed, onToggleCollapse }) {
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const [activeId, setActiveId] = useState(null)
   const [overId, setOverId] = useState(null)
   const [dropSide, setDropSide] = useState(null)
@@ -128,7 +129,11 @@ function TextSection({ items, title, onRename, onReorder, onDelete }) {
   )
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed)
+    if (onToggleCollapse) {
+      onToggleCollapse()
+    } else {
+      setInternalIsCollapsed(!internalIsCollapsed)
+    }
   }
 
   const handleDragStart = (event) => {

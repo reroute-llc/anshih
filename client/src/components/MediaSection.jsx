@@ -106,8 +106,9 @@ function DeleteZone({ isActive, activeId, items, onDelete, type }) {
   )
 }
 
-function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, onDelete }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, onDelete, isCollapsed: externalIsCollapsed, onToggleCollapse }) {
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false)
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed
   const [activeId, setActiveId] = useState(null)
   const [overId, setOverId] = useState(null)
   const [dropSide, setDropSide] = useState(null)
@@ -141,7 +142,11 @@ function MediaSection({ type, items, title, onMediaClick, onRename, onReorder, o
   }
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed)
+    if (onToggleCollapse) {
+      onToggleCollapse()
+    } else {
+      setInternalIsCollapsed(!internalIsCollapsed)
+    }
   }
 
   const handleDragStart = (event) => {

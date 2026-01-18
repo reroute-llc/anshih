@@ -20,7 +20,7 @@ import MediaSection from './MediaSection'
 import TextSection from './TextSection'
 import './MediaHub.css'
 
-function SortableCollection({ id, type, children }) {
+function SortableCollection({ id, type, children, onCollapseAll }) {
   const {
     attributes,
     listeners,
@@ -36,13 +36,39 @@ function SortableCollection({ id, type, children }) {
     opacity: isDragging ? 0.5 : 1,
   }
 
+  // Create custom drag handle that prevents drag on interactive elements
+  const handlePointerDown = (e) => {
+    // Don't start drag if clicking on interactive elements
+    const target = e.target
+    if (target.closest('.section-toggle-btn') ||
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('.media-name') ||
+        target.closest('.text-name') ||
+        target.closest('.text-content')) {
+      e.stopPropagation()
+      return false
+    }
+    return true
+  }
+
+  // Merge listeners with custom handler
+  const dragListeners = listeners ? {
+    ...listeners,
+    onPointerDown: (e) => {
+      if (handlePointerDown(e) && listeners.onPointerDown) {
+        listeners.onPointerDown(e)
+      }
+    },
+  } : {}
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`sortable-collection ${isDragging ? 'dragging' : ''}`}
       {...attributes}
-      {...listeners}
+      {...dragListeners}
     >
       {children}
     </div>
@@ -75,6 +101,7 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
   )
   
   const [activeId, setActiveId] = useState(null)
+  const [collapsedCollections, setCollapsedCollections] = useState(new Set())
   
   // Check if a collection should be shown
   const shouldShowCollection = (type) => {
@@ -91,6 +118,21 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
   
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
+    // Collapse all collections when dragging starts
+    const allTypes = ['text', 'gifs', 'images', 'soundbites']
+    setCollapsedCollections(new Set(allTypes))
+  }
+  
+  const handleCollectionToggle = (type) => {
+    setCollapsedCollections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(type)) {
+        newSet.delete(type)
+      } else {
+        newSet.add(type)
+      }
+      return newSet
+    })
   }
   
   const handleDragEnd = (event) => {
@@ -117,6 +159,7 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
   
   // Render collection component based on type
   const renderCollection = (type) => {
+    const isCollapsed = collapsedCollections.has(type)
     switch (type) {
       case 'text':
         return (
@@ -127,6 +170,8 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
             onRename={onRename}
             onReorder={onReorder}
             onDelete={onDelete}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => handleCollectionToggle(type)}
           />
         )
       case 'gifs':
@@ -140,6 +185,8 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
             onRename={onRename}
             onReorder={onReorder}
             onDelete={onDelete}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => handleCollectionToggle(type)}
           />
         )
       case 'images':
@@ -153,6 +200,8 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
             onRename={onRename}
             onReorder={onReorder}
             onDelete={onDelete}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => handleCollectionToggle(type)}
           />
         )
       case 'soundbites':
@@ -166,6 +215,8 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
             onRename={onRename}
             onReorder={onReorder}
             onDelete={onDelete}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => handleCollectionToggle(type)}
           />
         )
       default:
@@ -219,7 +270,15 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
           strategy={verticalListSortingStrategy}
         >
           {orderedCollections.map(type => (
-            <SortableCollection key={type} id={type} type={type}>
+            <SortableCollection 
+              key={type} 
+              id={type} 
+              type={type}
+              onCollapseAll={() => {
+                const allTypes = ['text', 'gifs', 'images', 'soundbites']
+                setCollapsedCollections(new Set(allTypes))
+              }}
+            >
               {renderCollection(type)}
             </SortableCollection>
           ))}
