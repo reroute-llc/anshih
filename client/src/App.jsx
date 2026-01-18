@@ -677,6 +677,9 @@ function App() {
           onFiltersChange={setActiveFilters}
         />
       )}
+      {showWelcome && (
+        <WelcomeModal onClose={handleWelcomeClose} />
+      )}
     </div>
   )
 }
