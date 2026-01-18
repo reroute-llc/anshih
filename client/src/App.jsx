@@ -6,6 +6,7 @@ import MediaHub from './components/MediaHub'
 import UploadPanel from './components/UploadPanel'
 import MediaViewer from './components/MediaViewer'
 import FilterPanel from './components/FilterPanel'
+import WelcomeModal from './components/WelcomeModal'
 import './App.css'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [textItems, setTextItems] = useState([])
   const [showUpload, setShowUpload] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState([])
@@ -38,6 +40,19 @@ function App() {
   useEffect(() => {
     localStorage.setItem('collectionOrder', JSON.stringify(collectionOrder))
   }, [collectionOrder])
+  
+  // Check if user has seen v1.1 welcome modal
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('hasSeenV1_1Welcome')
+    if (!hasSeenWelcome) {
+      setShowWelcome(true)
+    }
+  }, [])
+  
+  const handleWelcomeClose = () => {
+    setShowWelcome(false)
+    localStorage.setItem('hasSeenV1_1Welcome', 'true')
+  }
   const [viewerState, setViewerState] = useState({
     isOpen: false,
     currentType: null,
