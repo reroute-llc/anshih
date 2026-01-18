@@ -128,8 +128,9 @@
   gap: 8px;
 }
 
-.preset-filter-btn:hover {
+.preset-filter-btn:hover:not(.active) {
   background: var(--light-orange);
+  color: var(--orange);
   transform: translateY(-2px);
 }
 
