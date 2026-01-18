@@ -6,37 +6,19 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
   // Collection type filters
   const COLLECTION_TYPES = ['text', 'gifs', 'images', 'soundbites']
   
-  // Separate collection filters from content filters
+  // Only collection filters are allowed now
   const collectionFilters = activeFilters.filter(f => COLLECTION_TYPES.includes(f))
-  const contentFilters = activeFilters.filter(f => !COLLECTION_TYPES.includes(f))
   
-  // Check if item matches any content filter (name/content matching)
-  const matchesContentFilter = (item) => {
-    if (contentFilters.length === 0) return true
-    
-    const itemName = item.name.toLowerCase()
-    const itemContent = item.content ? item.content.toLowerCase() : ''
-    
-    return contentFilters.some(filter => {
-      const filterLower = filter.toLowerCase()
-      return itemName.includes(filterLower) || itemContent.includes(filterLower)
-    })
+  // Check if a collection should be shown
+  const shouldShowCollection = (type) => {
+    // If no filters active, show all collections
+    if (collectionFilters.length === 0) return true
+    // If filters active, only show filtered collections
+    return collectionFilters.includes(type)
   }
 
-  const filterItems = (items, type) => {
+  const filterItems = (items) => {
     let filtered = items
-
-    // Apply collection type filter first
-    if (collectionFilters.length > 0) {
-      const typeMap = {
-        'gifs': 'gifs',
-        'images': 'images',
-        'soundbites': 'soundbites'
-      }
-      if (!collectionFilters.includes(typeMap[type])) {
-        return [] // Hide this collection if not in active collection filters
-      }
-    }
 
     // Apply search query filter
     if (searchQuery && searchQuery.trim() !== '') {
@@ -46,23 +28,11 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       )
     }
 
-    // Apply content filters
-    if (contentFilters.length > 0) {
-      filtered = filtered.filter(matchesContentFilter)
-    }
-
     return filtered
   }
 
   const filterTextItems = (items) => {
     let filtered = items
-
-    // Apply collection type filter first
-    if (collectionFilters.length > 0) {
-      if (!collectionFilters.includes('text')) {
-        return [] // Hide text collection if not in active collection filters
-      }
-    }
 
     // Apply search query filter
     if (searchQuery && searchQuery.trim() !== '') {
@@ -73,50 +43,53 @@ function MediaHub({ media, textItems, onMediaClick, onRename, onReorder, onDelet
       )
     }
 
-    // Apply content filters
-    if (contentFilters.length > 0) {
-      filtered = filtered.filter(matchesContentFilter)
-    }
-
     return filtered
   }
 
   return (
     <div className="media-hub">
-      <TextSection 
-        items={filterTextItems(textItems)}
-        title="TEXT"
-        onRename={onRename}
-        onReorder={onReorder}
-        onDelete={onDelete}
-      />
-      <MediaSection 
-        type="gifs" 
-        items={filterItems(media.gifs, 'gifs')}
-        title="GIFS"
-        onMediaClick={onMediaClick}
-        onRename={onRename}
-        onReorder={onReorder}
-        onDelete={onDelete}
-      />
-      <MediaSection 
-        type="images" 
-        items={filterItems(media.images, 'images')}
-        title="IMAGES"
-        onMediaClick={onMediaClick}
-        onRename={onRename}
-        onReorder={onReorder}
-        onDelete={onDelete}
-      />
-      <MediaSection 
-        type="soundbites" 
-        items={filterItems(media.soundbites, 'soundbites')}
-        title="SOUNDBITES"
-        onMediaClick={onMediaClick}
-        onRename={onRename}
-        onReorder={onReorder}
-        onDelete={onDelete}
-      />
+      {shouldShowCollection('text') && (
+        <TextSection 
+          items={filterTextItems(textItems)}
+          title="TEXT"
+          onRename={onRename}
+          onReorder={onReorder}
+          onDelete={onDelete}
+        />
+      )}
+      {shouldShowCollection('gifs') && (
+        <MediaSection 
+          type="gifs" 
+          items={filterItems(media.gifs)}
+          title="GIFS"
+          onMediaClick={onMediaClick}
+          onRename={onRename}
+          onReorder={onReorder}
+          onDelete={onDelete}
+        />
+      )}
+      {shouldShowCollection('images') && (
+        <MediaSection 
+          type="images" 
+          items={filterItems(media.images)}
+          title="IMAGES"
+          onMediaClick={onMediaClick}
+          onRename={onRename}
+          onReorder={onReorder}
+          onDelete={onDelete}
+        />
+      )}
+      {shouldShowCollection('soundbites') && (
+        <MediaSection 
+          type="soundbites" 
+          items={filterItems(media.soundbites)}
+          title="SOUNDBITES"
+          onMediaClick={onMediaClick}
+          onRename={onRename}
+          onReorder={onReorder}
+          onDelete={onDelete}
+        />
+      )}
     </div>
   )
 }
